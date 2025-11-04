@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_task_form_tools" model="ir.ui.view">
+    <field name="name">project.task.form.tools</field>
+    <field name="model">project.task</field>
+    <field name="inherit_id" ref="project.view_task_form2"/>
+    <field name="arch" type="xml">
+      <xpath expr="//sheet/notebook" position="inside">
+        <page string="Herramientas" name="tools_tab">
+          <field name="tool_line_ids">
+            <list editable="bottom">
+              <field name="product_id"/>
+              <field name="qty"/>
+              <field name="uom_id" readonly="1"/>
+              <field name="lot_id" attrs="{'invisible': [('product_id.tracking','=','none')]}"/>
+              <field name="location_src_id"/>
+              <field name="location_dst_id"/>
+              <field name="state" readonly="1"/>
+              <field name="picking_out_id" readonly="1"/>
+              <field name="picking_in_id" readonly="1"/>
+              <button name="action_entregar" string="Entregar" type="object"
+                      attrs="{'invisible':[('state','!=','draft')]}"/>
+              <button name="action_devolver" string="Devolver" type="object"
+                      attrs="{'invisible':[('state','!=','out')]}"/>
+            </list>
+          </field>
+        </page>
+      </xpath>
+    </field>
+  </record>
+</odoo>
