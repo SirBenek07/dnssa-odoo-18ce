@@ -8,6 +8,8 @@
   "depends": ["project", "stock"],
   "data": [
     "security/ir.model.access.csv",
+    "views/project_task_type_views.xml",
+    "views/product_template_views.xml",
     "views/project_task_views.xml"
   ],
   "application": False,

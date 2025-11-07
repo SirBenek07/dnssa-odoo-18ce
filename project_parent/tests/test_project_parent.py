@@ -26,3 +26,35 @@ class TestProjectParent(TransactionCase):
         self.assertEqual(
             res.get("context").get("default_parent_id"), self.project_project_1.id
         )
+
+    def test_parent_analytic_items(self):
+        plan = self.env.ref("analytic.analytic_plan_projects")
+        parent_project = self.env["project.project"].create({"name": "Parent Analytic"})
+        child_project = self.env["project.project"].create(
+            {"name": "Child Analytic", "parent_id": parent_project.id}
+        )
+        parent_account = self.env["account.analytic.account"].create(
+            {"name": "Parent AA", "plan_id": plan.id}
+        )
+        child_account = self.env["account.analytic.account"].create(
+            {"name": "Child AA", "plan_id": plan.id}
+        )
+        parent_project.account_id = parent_account.id
+        child_project.account_id = child_account.id
+        analytic_line_model = self.env["account.analytic.line"]
+        analytic_line_model.create(
+            {"name": "Parent Line", "account_id": parent_account.id}
+        )
+        analytic_line_model.create(
+            {"name": "Child Line", "account_id": child_account.id}
+        )
+        self.assertEqual(parent_project.descendant_analytic_line_count, 2)
+        self.assertEqual(child_project.descendant_analytic_line_count, 1)
+        action = parent_project.action_view_descendant_analytic_items()
+        domain = action.get("domain", [])
+        self.assertTrue(domain)
+        self.assertEqual(domain[0][:2], ("account_id", "in"))
+        expected_accounts = (
+            parent_project._get_descendant_projects().account_id.ids
+        )
+        self.assertCountEqual(domain[0][2], expected_accounts)

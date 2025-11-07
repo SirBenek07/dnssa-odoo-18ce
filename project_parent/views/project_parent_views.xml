@@ -23,6 +23,19 @@ License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl.html). -->
                         widget="statinfo"
                     />
                 </button>
+                <button
+                    name="action_view_descendant_analytic_items"
+                    class="oe_stat_button"
+                    type="object"
+                    icon="fa-line-chart"
+                    groups="analytic.group_analytic_accounting"
+                >
+                    <field
+                        string="Analytic Items"
+                        name="descendant_analytic_line_count"
+                        widget="statinfo"
+                    />
+                </button>
             </div>
         </field>
     </record>

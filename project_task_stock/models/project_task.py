@@ -7,7 +7,7 @@ from odoo.tools import float_is_zero
 
 class ProjectTask(models.Model):
     _name = "project.task"
-    _inherit = ["project.task", "analytic.mixin"]
+    _inherit = ["project.task", "analytic.mixin", "ir.attachment.action_download"]
 
     scrap_ids = fields.One2many(
         comodel_name="stock.scrap", inverse_name="task_id", string="Scraps"

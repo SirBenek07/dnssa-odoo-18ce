@@ -6,22 +6,26 @@
     <field name="inherit_id" ref="project.view_task_form2"/>
     <field name="arch" type="xml">
       <xpath expr="//sheet/notebook" position="inside">
-        <page string="Herramientas" name="tools_tab">
-          <field name="tool_line_ids">
+        <page string="Herramientas" name="tools_tab"
+              invisible="not use_task_tools">
+          <field name="use_task_tools" invisible="1"/>
+          <field name="done_task_tools" invisible="1"/>
+          <field name="tool_line_ids" readonly="done_task_tools">
             <list editable="bottom">
+              <field name="task_done_task_tools" invisible="1"/>
               <field name="product_id"/>
               <field name="qty"/>
               <field name="uom_id" readonly="1"/>
-              <field name="lot_id" attrs="{'invisible': [('product_id.tracking','=','none')]}"/>
-              <field name="location_src_id"/>
-              <field name="location_dst_id"/>
+              <field name="date_from"/>
+              <field name="date_to"/>
+              <field name="picking_type_id"/>
               <field name="state" readonly="1"/>
               <field name="picking_out_id" readonly="1"/>
               <field name="picking_in_id" readonly="1"/>
               <button name="action_entregar" string="Entregar" type="object"
-                      attrs="{'invisible':[('state','!=','draft')]}"/>
+                      invisible="state != 'draft' or task_done_task_tools"/>
               <button name="action_devolver" string="Devolver" type="object"
-                      attrs="{'invisible':[('state','!=','out')]}"/>
+                      invisible="state != 'out' or task_done_task_tools"/>
             </list>
           </field>
         </page>

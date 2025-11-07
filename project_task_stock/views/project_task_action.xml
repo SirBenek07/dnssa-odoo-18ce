@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="project.action_view_all_task" model="ir.actions.act_window">
+        <field name="domain">['|', ('display_in_project', '=', True), ('parent_id', '!=', False)]</field>
+    </record>
+</odoo>

@@ -13,3 +13,8 @@ In form View:
 1.  Go to Project \> Dashboard
 2.  Open the projects settings
 3.  Modify the "Parent Project" in settings tab
+
+Analytic overview:
+
+1.  Open any project (requires the Analytic Accounting access right).
+2.  Click on the "Analytic Items" smart button to review every analytic entry linked to the project and all its sub-projects.
