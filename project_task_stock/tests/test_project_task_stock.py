@@ -93,6 +93,51 @@ class TestProjectTaskStock(TestProjectStockBase):
             fields.Date.from_string("1990-01-01"),
         )
 
+    def test_stock_move_task_id_creates_analytic_line(self):
+        manual_task_form = Form(
+            self.env["project.task"].with_context(**self._prepare_context_task())
+        )
+        manual_task_form.name = "Manual Move Task"
+        manual_task = manual_task_form.save()
+        self.env["stock.quant"].create(
+            {
+                "product_id": self.product_a.id,
+                "location_id": self.location.id,
+                "quantity": 1,
+            }
+        )
+        picking = self.env["stock.picking"].create(
+            {
+                "name": "Manual move picking",
+                "picking_type_id": self.picking_type.id,
+                "location_id": self.location.id,
+                "location_dest_id": self.location_dest.id,
+                "company_id": self.env.company.id,
+            }
+        )
+        move = self.env["stock.move"].create(
+            {
+                "name": "Manual move",
+                "product_id": self.product_a.id,
+                "product_uom_qty": 1,
+                "product_uom": self.product_a.uom_id.id,
+                "picking_id": picking.id,
+                "company_id": self.env.company.id,
+                "location_id": self.location.id,
+                "location_dest_id": self.location_dest.id,
+                "picking_type_id": self.picking_type.id,
+                "task_id": manual_task.id,
+            }
+        )
+        move._action_confirm()
+        move.quantity = move.product_uom_qty
+        picking.button_validate()
+        analytic_lines = manual_task.sudo().stock_analytic_line_ids
+        self.assertEqual(len(analytic_lines), 1)
+        self.assertEqual(analytic_lines.account_id, manual_task.project_id.account_id)
+        self.assertEqual(sum(analytic_lines.mapped("unit_amount")), 1)
+        self.assertEqual(sum(analytic_lines.mapped("amount")), -10)
+
     @users("manager-user")
     def test_project_task_without_analytic_account_manager_user(self):
         self.test_project_task_without_analytic_account()

@@ -28,6 +28,8 @@ class StockMove(models.Model):
         product = self.product_id
         company_id = self.env.company
         task = self.task_id or self.raw_material_task_id
+        if not task:
+            return False
         analytic_account = task.stock_analytic_account_id or task.project_id.account_id
         if not analytic_account:
             return False
@@ -105,7 +107,7 @@ class StockMove(models.Model):
         moves_todo = super()._action_done(cancel_backorder)
         # Use sudo to avoid error for users with no access to analytic
         analytic_line_model = self.env["account.analytic.line"].sudo()
-        for move in moves_todo.filtered(lambda x: x.raw_material_task_id):
+        for move in moves_todo.filtered(lambda x: x.raw_material_task_id or x.task_id):
             vals = move._prepare_analytic_line_from_task()
             if vals:
                 analytic_line_model.create(vals)
