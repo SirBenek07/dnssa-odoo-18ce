@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_task_calendar_with_duration" model="ir.ui.view">
+        <field name="name">project.task.calendar.duration</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_calendar"/>
+        <field name="arch" type="xml">
+            <xpath expr="//calendar" position="attributes">
+                <attribute name="date_start">calendar_date_start</attribute>
+                <attribute name="date_stop">calendar_date_stop</attribute>
+            </xpath>
+            <xpath expr="//calendar" position="inside">
+                <field name="calendar_date_start" invisible="1"/>
+                <field name="calendar_date_stop" invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

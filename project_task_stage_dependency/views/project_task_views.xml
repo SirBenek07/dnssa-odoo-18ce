@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="project_task_form_stage_dependency" model="ir.ui.view">
+        <field name="name">project.task.form.stage.dependency</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='date_deadline']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='stage_id']" position="after">
+                <field
+                    name="completion_stage_id"
+                    optional="hide"
+                    groups="project.group_project_manager"
+                    domain="['|', ('project_ids', '=', False), ('project_ids', 'in', project_id)]"
+                />
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page
+                    string="Dependencias"
+                    groups="project.group_project_manager"
+                    invisible="not parent_id"
+                >
+                    <group>
+                        <field
+                            name="completion_stage_id"
+                            string="Required Completion Stage"
+                            groups="project.group_project_manager"
+                            domain="['|', ('project_ids', '=', False), ('project_ids', 'in', project_id)]"
+                        />
+                        <field
+                            name="dependency_task_ids"
+                            widget="many2many_tags"
+                            domain="['&amp;', ('project_id', '=', project_id), ('id', '!=', id)]"
+                            options="{'color_field': 'color'}"
+                            context="{'default_project_id': project_id}"
+                        />
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
