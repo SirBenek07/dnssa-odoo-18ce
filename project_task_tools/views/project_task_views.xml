@@ -9,7 +9,7 @@
         <page string="Recursos" name="tools_tab" invisible="not use_task_tools">
           <field name="use_task_tools" invisible="1"/>
           <field name="done_task_tools" invisible="1"/>
-          <field name="tool_line_ids" readonly="done_task_tools">
+          <field name="tool_line_ids" readonly="done_task_tools" context="{'default_task_id': id}">
             <list editable="bottom">
               <field name="task_done_task_tools" invisible="1"/>
               <field name="resource_type"/>

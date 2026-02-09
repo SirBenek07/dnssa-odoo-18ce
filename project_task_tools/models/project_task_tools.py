@@ -10,6 +10,31 @@ class ProjectTaskToolLine(models.Model):
     _description = "Linea de recurso asignada a tarea"
     _rec_name = "resource_name"
 
+    @api.model
+    def _get_default_task(self):
+        task_id = self.env.context.get("default_task_id")
+        if not task_id and self.env.context.get("active_model") == "project.task":
+            task_id = self.env.context.get("active_id")
+        if not task_id:
+            return self.env["project.task"]
+        return self.env["project.task"].browse(task_id).exists()
+
+    @api.model
+    def _default_date_from(self):
+        task = self._get_default_task()
+        if task and task.planned_date_start:
+            return fields.Date.to_date(task.planned_date_start)
+        return fields.Date.context_today(self)
+
+    @api.model
+    def _default_date_to(self):
+        task = self._get_default_task()
+        if task and task.planned_date_end:
+            return fields.Date.to_date(task.planned_date_end)
+        if task and task.planned_date_start:
+            return fields.Date.to_date(task.planned_date_start)
+        return fields.Date.context_today(self)
+
     task_id = fields.Many2one("project.task", required=True, ondelete="cascade")
     company_id = fields.Many2one(related="task_id.company_id", store=True, readonly=True)
     resource_type = fields.Selection(
@@ -30,8 +55,8 @@ class ProjectTaskToolLine(models.Model):
     resource_name = fields.Char(string="Recurso", compute="_compute_resource_name", store=True)
     qty = fields.Float(default=1.0, string="Unidades")
     uom_id = fields.Many2one(related="product_id.uom_id", store=True, readonly=True, string="U. medida")
-    date_from = fields.Date(string="Desde", required=True, default=fields.Date.context_today)
-    date_to = fields.Date(string="Hasta", required=True, default=fields.Date.context_today)
+    date_from = fields.Date(string="Desde", required=True, default=lambda self: self._default_date_from())
+    date_to = fields.Date(string="Hasta", required=True, default=lambda self: self._default_date_to())
     state = fields.Selection(
         [("draft", "Borrador"), ("out", "Entregado"), ("returned", "Devuelto")],
         default="draft",
