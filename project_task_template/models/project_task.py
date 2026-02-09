@@ -15,6 +15,14 @@ class ProjectTask(models.Model):
         string="Area",
         domain="[('project_id', '=', project_id)]",
     )
+    template_area_ids = fields.Many2many(
+        comodel_name="project.task.template.area",
+        relation="project_task_template_area_rel",
+        column1="task_id",
+        column2="area_id",
+        string="Areas",
+        domain="[('project_id', '=', project_id)]",
+    )
     template_offset_days = fields.Integer(
         string="Dias",
         default=0,
@@ -38,6 +46,11 @@ class ProjectTask(models.Model):
     def create(self, vals_list):
         should_check_access = False
         for vals in vals_list:
+            if "template_area_id" in vals and "template_area_ids" not in vals:
+                if vals.get("template_area_id"):
+                    vals["template_area_ids"] = [(6, 0, [vals["template_area_id"]])]
+                else:
+                    vals["template_area_ids"] = [(5, 0, 0)]
             parent_id = vals.get("parent_id") or self.env.context.get("default_parent_id")
             if not vals.get("is_task_template") and parent_id:
                 parent = self.env["project.task"].browse(parent_id)
@@ -47,16 +60,27 @@ class ProjectTask(models.Model):
                 should_check_access = True
         if should_check_access:
             self._check_template_manage_access()
-        return super().create(vals_list)
+        tasks = super().create(vals_list)
+        tasks._sync_template_areas_legacy_fields()
+        return tasks
 
     def write(self, vals):
+        vals = dict(vals)
+        if "template_area_id" in vals and "template_area_ids" not in vals:
+            if vals.get("template_area_id"):
+                vals["template_area_ids"] = [(6, 0, [vals["template_area_id"]])]
+            else:
+                vals["template_area_ids"] = [(5, 0, 0)]
         if "parent_id" in vals and vals["parent_id"] and "is_task_template" not in vals:
             parent = self.env["project.task"].browse(vals["parent_id"])
             if parent.is_task_template:
                 vals["is_task_template"] = True
         if "is_task_template" in vals or any(task.is_task_template for task in self):
             self._check_template_manage_access()
-        return super().write(vals)
+        res = super().write(vals)
+        if not self.env.context.get("skip_template_area_sync"):
+            self._sync_template_areas_legacy_fields()
+        return res
 
     def unlink(self):
         if any(task.is_task_template for task in self):
@@ -85,3 +109,16 @@ class ProjectTask(models.Model):
             )
         project = self.env["project.project"].browse(project_id)
         return project.action_open_task_template_wizard()
+
+    def _sync_template_areas_legacy_fields(self):
+        for task in self:
+            if task.template_area_ids:
+                first_area = task.template_area_ids[0]
+                if task.template_area_id != first_area:
+                    super(ProjectTask, task.with_context(skip_template_area_sync=True)).write(
+                        {"template_area_id": first_area.id}
+                    )
+            elif task.template_area_id:
+                super(ProjectTask, task.with_context(skip_template_area_sync=True)).write(
+                    {"template_area_ids": [(6, 0, [task.template_area_id.id])]}
+                )

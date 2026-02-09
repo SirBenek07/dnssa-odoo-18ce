@@ -57,7 +57,7 @@
                     invisible="not is_task_template"
                 >
                     <group>
-                        <field name="template_area_id" />
+                        <field name="template_area_ids" widget="many2many_tags" />
                         <field name="template_offset_days" />
                         <field name="template_offset_direction" />
                     </group>

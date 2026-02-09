@@ -44,7 +44,10 @@ class ProjectTaskTemplateGenerateWizard(models.TransientModel):
                         ("is_task_template", "=", True),
                     ]
                 )
-                areas = template_tasks.mapped("template_area_id").sorted("name")
+                areas = template_tasks.mapped("template_area_ids")
+                legacy_areas = template_tasks.mapped("template_area_id")
+                areas |= legacy_areas
+                areas = areas.sorted("name")
             else:
                 areas = wizard.project_id.template_area_ids.sorted("name")
             for area in areas.filtered("id"):

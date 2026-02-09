@@ -151,6 +151,12 @@ class ProjectProject(models.Model):
             mapped_completion_stage = self._map_stage(
                 template_task.completion_stage_id, stage_by_name
             )
+            template_area_ids = self._get_task_template_area_ids(template_task)
+            mapped_template_area_ids = [
+                template_to_target_area[area_id]
+                for area_id in template_area_ids
+                if area_id in template_to_target_area
+            ]
             values = {
                 "name": (
                     generated_task_name
@@ -163,14 +169,14 @@ class ProjectProject(models.Model):
                 "priority": template_task.priority,
                 "sequence": template_task.sequence,
                 "company_id": self.company_id.id,
-                "template_area_id": template_to_target_area.get(
-                    template_task.template_area_id.id
-                ),
                 "template_offset_days": template_task.template_offset_days,
                 "template_offset_direction": template_task.template_offset_direction,
                 "is_task_template": False,
                 "completion_stage_enforcement": template_task.completion_stage_enforcement,
             }
+            if mapped_template_area_ids:
+                values["template_area_ids"] = [(6, 0, mapped_template_area_ids)]
+                values["template_area_id"] = mapped_template_area_ids[0]
             if mapped_completion_stage:
                 values["completion_stage_id"] = mapped_completion_stage.id
             mapped_stage = self._map_stage(template_task.stage_id, stage_by_name)
@@ -200,19 +206,18 @@ class ProjectProject(models.Model):
                 values["planned_date_start"] = root_planned_date_start
                 values["planned_date_end"] = root_planned_date_end
 
-            area = template_task.template_area_id
-            assignee = False
-            if area:
+            assigned_user_ids = []
+            for area in self._get_task_template_areas(template_task):
                 assignee = assignee_by_template_area.get(area.id)
                 if not assignee and assignee_by_template_area_name:
                     assignee = assignee_by_template_area_name.get(area.name)
-            assigned_user = self._resolve_assignee_user(assignee) if assignee else False
-            if assigned_user:
-                values["user_ids"] = [(6, 0, [assigned_user.id])]
+                assigned_user = self._resolve_assignee_user(assignee) if assignee else False
+                if assigned_user:
+                    assigned_user_ids.append(assigned_user.id)
+            if assigned_user_ids:
+                values["user_ids"] = [(6, 0, list(dict.fromkeys(assigned_user_ids)))]
 
             new_task = self.env["project.task"].create(values)
-            if assigned_user and not new_task.user_ids:
-                new_task.write({"user_ids": [(6, 0, [assigned_user.id])]})
             template_to_target_task[template_task.id] = new_task
             if has_template_parent:
                 root_task = self._find_root_template_task(
@@ -241,8 +246,11 @@ class ProjectProject(models.Model):
     def _map_or_create_template_areas(self, template_tasks):
         target_areas_by_name = {area.name: area for area in self.template_area_ids}
         template_to_target_area = {}
-        for template_task in template_tasks.filtered("template_area_id"):
-            template_area = template_task.template_area_id
+        template_areas = self.env["project.task.template.area"]
+        for template_task in template_tasks:
+            template_areas |= self._get_task_template_areas(template_task)
+
+        for template_area in template_areas:
             target_area = target_areas_by_name.get(template_area.name)
             if not target_area:
                 target_area = self.env["project.task.template.area"].create(
@@ -254,6 +262,15 @@ class ProjectProject(models.Model):
                 target_areas_by_name[target_area.name] = target_area
             template_to_target_area[template_area.id] = target_area.id
         return template_to_target_area
+
+    def _get_task_template_areas(self, task):
+        areas = task.template_area_ids
+        if not areas and task.template_area_id:
+            areas = task.template_area_id
+        return areas
+
+    def _get_task_template_area_ids(self, task):
+        return self._get_task_template_areas(task).ids
 
     def _find_root_template_task(self, template_task, allowed_template_ids=None):
         root_task = template_task
