@@ -124,6 +124,10 @@ class ProjectCashFlowWizard(models.TransientModel):
 
     def _get_direct_main_task_for_expense(self, line):
         task = False
+        # Stock consumptions created by project_task_stock store the task link
+        # in account.analytic.line.stock_task_id.
+        if "stock_task_id" in line._fields and line.stock_task_id:
+            task = line.stock_task_id
         if "task_id" in line._fields and line.task_id:
             task = line.task_id
         move_line = getattr(line, "move_line_id", False)
