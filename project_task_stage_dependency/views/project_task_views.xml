@@ -9,12 +9,17 @@
                 <attribute name="invisible">1</attribute>
             </xpath>
             <xpath expr="//field[@name='stage_id']" position="after">
+                <field name="warn_stage_change_ack" invisible="1" />
                 <field
                     name="completion_stage_id"
                     optional="hide"
                     groups="project.group_project_manager"
-                    domain="['|', ('project_ids', '=', False), ('project_ids', 'in', project_id)]"
+                    domain="[('project_ids', '=', project_id)]"
                 />
+            </xpath>
+            <xpath expr="//field[@name='stage_id']" position="attributes">
+                <attribute name="invisible" add="parent_id" separator=" or " />
+                <attribute name="context">{'allow_warn_stage_change': True}</attribute>
             </xpath>
             <xpath expr="//notebook" position="inside">
                 <page
@@ -25,9 +30,14 @@
                     <group>
                         <field
                             name="completion_stage_id"
-                            string="Required Completion Stage"
+                            string="Etapa obligatoria de cierre"
                             groups="project.group_project_manager"
-                            domain="['|', ('project_ids', '=', False), ('project_ids', 'in', project_id)]"
+                            domain="[('project_ids', '=', project_id)]"
+                        />
+                        <field
+                            name="completion_stage_enforcement"
+                            groups="project.group_project_manager"
+                            invisible="not completion_stage_id"
                         />
                         <field
                             name="dependency_task_ids"

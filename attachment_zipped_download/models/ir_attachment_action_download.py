@@ -23,6 +23,14 @@ class IrAttachmentActionDownloadMixin(models.AbstractModel):
             [("res_model", "=", self._name), ("res_id", "in", self.ids)]
         )
 
+    def _get_zip_download_name(self):
+        """Optional hook to customize the downloaded ZIP file name."""
+        return False
+
+    def _get_zip_download_options(self):
+        """Optional hook to pass extra options to zipped download."""
+        return {}
+
     def action_download_attachments(self):
         """Return action to:
         * emit a warning message if no attachment found
@@ -52,4 +60,6 @@ class IrAttachmentActionDownloadMixin(models.AbstractModel):
                 "url": f"/web/content/{attachments.id}?download=1",
             }
         else:
-            return attachments.action_attachments_download()
+            options = {"zip_name": self._get_zip_download_name()}
+            options.update(self._get_zip_download_options())
+            return attachments.action_attachments_download(**options)

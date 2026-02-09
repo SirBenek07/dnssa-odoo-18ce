@@ -1,6 +1,6 @@
 {
-    "name": "Project Task Stage Dependency",
-    "summary": "Control stage transitions with task prerequisites and required completion stages",
+    "name": "Dependencias de Etapas en Tareas de Proyecto",
+    "summary": "Controla cambios de etapa con prerequisitos entre tareas y etapa obligatoria de cierre",
     "version": "18.0.1.0.0",
     "category": "Project",
     "author": "Versiones",

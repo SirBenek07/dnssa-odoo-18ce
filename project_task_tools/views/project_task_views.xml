@@ -6,26 +6,25 @@
     <field name="inherit_id" ref="project.view_task_form2"/>
     <field name="arch" type="xml">
       <xpath expr="//sheet/notebook" position="inside">
-        <page string="Herramientas" name="tools_tab"
-              invisible="not use_task_tools">
+        <page string="Recursos" name="tools_tab" invisible="not use_task_tools">
           <field name="use_task_tools" invisible="1"/>
           <field name="done_task_tools" invisible="1"/>
           <field name="tool_line_ids" readonly="done_task_tools">
             <list editable="bottom">
               <field name="task_done_task_tools" invisible="1"/>
-              <field name="product_id"/>
-              <field name="qty"/>
-              <field name="uom_id" readonly="1"/>
+              <field name="resource_type"/>
+              <field name="product_id" invisible="resource_type != 'tool'" required="resource_type == 'tool'"/>
+              <field name="vehicle_id" invisible="resource_type != 'vehicle'" required="resource_type == 'vehicle'" domain="['|', ('company_id', '=', False), ('company_id', 'in', context.get('allowed_company_ids', []))]"/>
+              <field name="qty" invisible="resource_type == 'vehicle'"/>
+              <field name="uom_id" readonly="1" invisible="resource_type != 'tool'"/>
               <field name="date_from"/>
               <field name="date_to"/>
-              <field name="picking_type_id"/>
+              <field name="picking_type_id" invisible="resource_type != 'tool'"/>
               <field name="state" readonly="1"/>
-              <field name="picking_out_id" readonly="1"/>
-              <field name="picking_in_id" readonly="1"/>
-              <button name="action_entregar" string="Entregar" type="object"
-                      invisible="state != 'draft' or task_done_task_tools"/>
-              <button name="action_devolver" string="Devolver" type="object"
-                      invisible="state != 'out' or task_done_task_tools"/>
+              <field name="picking_out_id" readonly="1" invisible="resource_type != 'tool'"/>
+              <field name="picking_in_id" readonly="1" invisible="resource_type != 'tool'"/>
+              <button name="action_entregar" string="Entregar" type="object" invisible="state != 'draft' or task_done_task_tools"/>
+              <button name="action_devolver" string="Devolver" type="object" invisible="state != 'out' or task_done_task_tools"/>
             </list>
           </field>
         </page>

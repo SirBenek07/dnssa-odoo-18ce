@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="project_task_kanban_generate_from_template_button" model="ir.ui.view">
+        <field name="name">project.task.kanban.generate.template.button</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_kanban" />
+        <field name="arch" type="xml">
+            <xpath expr="//kanban" position="inside">
+                <header>
+                    <button
+                        name="action_open_generate_from_template_wizard_project"
+                        type="object"
+                        string="Generar tarea desde plantilla"
+                        class="btn-primary"
+                        display="always"
+                        groups="project.group_project_manager"
+                        invisible="not context.get('default_project_id')"
+                    />
+                </header>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project_task_list_generate_from_template_button" model="ir.ui.view">
+        <field name="name">project.task.list.generate.template.button</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_tree2" />
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <header>
+                    <button
+                        name="action_open_generate_from_template_wizard_project"
+                        type="object"
+                        string="Generar tarea desde plantilla"
+                        class="btn-primary"
+                        display="always"
+                        groups="project.group_project_manager"
+                        invisible="not context.get('default_project_id')"
+                    />
+                </header>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project_task_form_template_fields" model="ir.ui.view">
+        <field name="name">project.task.form.project.task.template</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='project_id']" position="after">
+                <field name="is_task_template" invisible="1" />
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page
+                    string="Plantilla"
+                    groups="project.group_project_manager"
+                    invisible="not is_task_template"
+                >
+                    <group>
+                        <field name="template_area_id" />
+                        <field name="template_offset_days" />
+                        <field name="template_offset_direction" />
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

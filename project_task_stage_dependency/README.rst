@@ -1,27 +1,26 @@
-====================================
-Project Task Stage Dependency
+﻿====================================
+Dependencias de Etapas en Tareas
 ====================================
 
-Este módulo introduce reglas de dependencia bidireccionales entre las tareas y
-las etapas de un proyecto.
+Este modulo introduce reglas de dependencia entre tareas y etapas dentro de un proyecto.
 
-Características
+Caracteristicas
 ===============
 
-* Define en cada tarea qué otras tareas deben cerrarse antes de permitir el
-  cambio de etapa.
+* Define en cada tarea que otras tareas conviene cerrar antes de cambiar de
+  etapa.
 * Establece una etapa obligatoria para dar por finalizada cada tarea, evitando
   cierres fuera de proceso.
-* Evita movimientos erróneos en el kanban y en cualquier acción que cambie la
-  etapa de la tarea mediante mensajes de validación claros.
+* Muestra advertencias al cambiar de etapa si existen tareas bloqueantes
+  pendientes, sin impedir el cambio.
 
 Uso
-====
+===
 
-1. Abre una tarea y, en la nueva pestaña *Dependencias*, selecciona las tareas
-   que deben finalizar antes de poder moverla de etapa.
-2. Usa el campo "Required Completion Stage" para indicar la única etapa en la
+1. Abre una tarea y, en la pestana *Dependencias*, selecciona las tareas que
+   deben finalizar antes de poder moverla de etapa.
+2. Usa el campo "Etapa obligatoria de cierre" para indicar la unica etapa en la
    que la tarea puede marcarse como completada.
-3. A partir de ahí, al intentar mover la tarea Odoo impedirá el cambio mientras
-   existan tareas bloqueantes abiertas y sólo permitirá completar la tarea en la
-   etapa definida.
+3. A partir de ahi, al intentar mover la tarea Odoo mostrara una advertencia si
+   existen tareas bloqueantes abiertas, y solo permitira completar la tarea en
+   la etapa definida.

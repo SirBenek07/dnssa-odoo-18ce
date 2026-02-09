@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="project_template_edit_project" model="ir.ui.view">
+        <field name="name">project.project.form.project.task.template</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project" />
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_open_task_template_wizard"
+                    type="object"
+                    string="Generar a partir de plantilla"
+                    class="oe_highlight"
+                />
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Plantillas" groups="project.group_project_manager">
+                    <group>
+                        <field
+                            name="template_area_ids"
+                            context="{'default_project_id': id}"
+                        >
+                            <list editable="bottom">
+                                <field name="name" />
+                                <field name="active" />
+                            </list>
+                        </field>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project_template_kanban_manage_templates" model="ir.ui.view">
+        <field name="name">project.project.kanban.project.task.template</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project_kanban" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='card_menu_view']" position="inside">
+                <div role="menuitem" groups="project.group_project_manager">
+                    <a name="action_manage_templates" type="object">Gestionar Plantillas</a>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

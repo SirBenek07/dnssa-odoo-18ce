@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="project_task_template_generate_wizard_form" model="ir.ui.view">
+        <field name="name">project.task.template.generate.wizard.form</field>
+        <field name="model">project.task.template.generate.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Generar desde plantilla">
+                <group>
+                    <field name="project_id" />
+                    <field name="template_task_id" />
+                    <field name="generated_task_name" />
+                    <field name="root_planned_date_start" />
+                    <field name="root_planned_date_end" />
+                </group>
+                <group string="Encargados por area">
+                    <field name="area_line_ids" nolabel="1">
+                        <list editable="bottom" create="0" delete="0">
+                            <field name="area_id" readonly="1" force_save="1" />
+                            <field name="user_id" />
+                        </list>
+                    </field>
+                </group>
+                <footer>
+                    <button
+                        name="action_generate"
+                        string="Generar"
+                        type="object"
+                        class="oe_highlight"
+                    />
+                    <button special="cancel" string="Cancelar" class="oe_link" />
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

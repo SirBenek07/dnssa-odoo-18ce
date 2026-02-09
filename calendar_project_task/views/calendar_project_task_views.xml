@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_calendar_project_my_tasks" model="ir.actions.act_window">
+        <field name="name">Mis tareas de proyecto</field>
+        <field name="res_model">project.task</field>
+        <field name="view_mode">calendar,list,kanban,form</field>
+        <field name="view_id" ref="project.view_task_all_calendar"/>
+        <field name="search_view_id" ref="project.view_task_search_form"/>
+        <field name="domain">[
+            ('project_id', '!=', False),
+            ('user_ids', 'in', uid)
+        ]</field>
+        <field name="context">{
+            'search_default_open_tasks': 1,
+            'search_default_my_tasks': 1,
+            'default_user_ids': [(4, uid)]
+        }</field>
+    </record>
+
+    <menuitem
+        id="calendar_project_my_tasks_menu"
+        name="Mis tareas de proyecto"
+        parent="calendar.mail_menu_calendar"
+        action="action_calendar_project_my_tasks"
+        sequence="20"
+        groups="project.group_project_user,project.group_project_manager"
+    />
+</odoo>

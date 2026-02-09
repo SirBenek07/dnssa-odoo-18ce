@@ -5,12 +5,13 @@
   "author": "Federico Fernández",
   "website": "https://example.com",
   "license": "AGPL-3",
-  "depends": ["project", "stock"],
+  "depends": ["project", "stock", "fleet"],
   "data": [
     "security/ir.model.access.csv",
     "views/project_task_type_views.xml",
     "views/product_template_views.xml",
-    "views/project_task_views.xml"
+    "views/project_task_views.xml",
+    "views/project_task_resource_report_views.xml",
   ],
   "application": False,
   "installable": True

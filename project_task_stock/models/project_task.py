@@ -86,6 +86,31 @@ class ProjectTask(models.Model):
         comodel_name="procurement.group",
     )
 
+    def _get_downloadable_attachments(self):
+        tasks = self.env["project.task"].search([("id", "child_of", self.ids)])
+        return self.env["ir.attachment"].search(
+            [
+                ("res_model", "=", "project.task"),
+                ("res_id", "in", tasks.ids),
+            ]
+        )
+
+    def _get_zip_download_name(self):
+        if not self:
+            return False
+        root_task = self[0]
+        while root_task.parent_id:
+            root_task = root_task.parent_id
+        if len(self) > 1:
+            return f"{root_task.name}_y_mas.zip"
+        return f"{root_task.name}.zip"
+
+    def _get_zip_download_options(self):
+        return {
+            "selected_task_ids": self.ids,
+            "group_by_selected_task": True,
+        }
+
     def _compute_scrap_move_count(self):
         data = self.env["stock.scrap"].read_group(
             [("task_id", "in", self.ids)], ["task_id"], ["task_id"]

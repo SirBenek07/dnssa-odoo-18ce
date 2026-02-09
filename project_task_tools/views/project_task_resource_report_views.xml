@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_project_task_resource_report_list" model="ir.ui.view">
+    <field name="name">project.task.tool.line.quick.report.list</field>
+    <field name="model">project.task.tool.line</field>
+    <field name="arch" type="xml">
+      <list string="Reporte rapido de recursos" decoration-danger="is_currently_in_use" decoration-muted="state == 'returned'">
+        <field name="resource_name"/>
+        <field name="resource_type"/>
+        <field name="date_from"/>
+        <field name="date_to"/>
+        <field name="task_id" string="Evento/Tarea"/>
+        <field name="state"/>
+        <field name="is_currently_in_use" optional="hide"/>
+      </list>
+    </field>
+  </record>
+
+  <record id="view_project_task_resource_report_calendar" model="ir.ui.view">
+    <field name="name">project.task.tool.line.quick.report.calendar</field>
+    <field name="model">project.task.tool.line</field>
+    <field name="arch" type="xml">
+      <calendar string="Calendario de recursos" date_start="calendar_date_start" date_stop="calendar_date_stop" color="resource_type" mode="month" event_open_popup="true">
+        <field name="resource_name"/>
+        <field name="task_id"/>
+        <field name="state"/>
+        <field name="resource_type"/>
+      </calendar>
+    </field>
+  </record>
+
+  <record id="view_project_task_resource_report_search" model="ir.ui.view">
+    <field name="name">project.task.tool.line.quick.report.search</field>
+    <field name="model">project.task.tool.line</field>
+    <field name="arch" type="xml">
+      <search string="Buscar recursos">
+        <field name="resource_name" string="Recurso"/>
+        <field name="task_id"/>
+        <field name="resource_type"/>
+        <field name="state"/>
+        <filter name="active_or_future" string="En uso o futuras" domain="[('date_to', '&gt;=', context_today())]"/>
+        <filter name="in_use_today" string="En uso hoy" domain="[('date_from', '&lt;=', context_today()), ('date_to', '&gt;=', context_today()), ('state', 'in', ['draft', 'out'])]"/>
+        <filter name="tools_only" string="Herramientas" domain="[('resource_type', '=', 'tool')]"/>
+        <filter name="vehicles_only" string="Vehiculos" domain="[('resource_type', '=', 'vehicle')]"/>
+        <group expand="0" string="Agrupar por">
+          <filter name="group_task" string="Evento/Tarea" context="{'group_by': 'task_id'}"/>
+          <filter name="group_type" string="Tipo" context="{'group_by': 'resource_type'}"/>
+          <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+        </group>
+      </search>
+    </field>
+  </record>
+
+  <record id="action_project_task_resource_quick_report" model="ir.actions.act_window">
+    <field name="name">Reporte rapido de recursos</field>
+    <field name="res_model">project.task.tool.line</field>
+    <field name="view_mode">list,calendar,form</field>
+    <field name="search_view_id" ref="view_project_task_resource_report_search"/>
+    <field name="context">{'search_default_active_or_future': 1}</field>
+  </record>
+
+  <menuitem id="menu_project_task_resource_quick_report" name="Reporte rapido de recursos" parent="project.menu_main_pm" action="action_project_task_resource_quick_report" sequence="80" groups="project.group_project_user,project.group_project_manager"/>
+</odoo>
