@@ -1,11 +1,20 @@
 from odoo import _, api, models, fields
-from odoo.exceptions import ValidationError
+from odoo.exceptions import RedirectWarning, ValidationError
 from odoo.tools.misc import format_datetime
+
+TASK_CLOSED_STATES = {"1_done", "1_canceled"}
 
 
 class ProjectTask(models.Model):
     _inherit = "project.task"
 
+    family_root_task_id = fields.Many2one(
+        comodel_name="project.task",
+        string="Tarea raiz de familia",
+        compute="_compute_family_root_task_id",
+        store=True,
+        index=True,
+    )
     dependency_task_ids = fields.Many2many(
         comodel_name="project.task",
         relation="project_task_stage_dependency_rel",
@@ -31,11 +40,33 @@ class ProjectTask(models.Model):
             "no esta cerrada y su etapa obligatoria ya debio cumplirse."
         ),
     )
+    dependency_enforcement = fields.Selection(
+        selection=[
+            ("block", "Bloquear"),
+            ("warn", "Advertir"),
+        ],
+        string="Comportamiento de tareas bloqueantes",
+        default="block",
+        help=(
+            "Define que pasa al marcar esta tarea como Hecha/Cancelada cuando "
+            "todavia tiene tareas bloqueantes pendientes."
+        ),
+    )
     warn_stage_change_ack = fields.Boolean(
         string="Confirmacion interna de advertencia de etapa",
         default=False,
         copy=False,
     )
+
+    @api.depends("parent_id", "parent_id.family_root_task_id")
+    def _compute_family_root_task_id(self):
+        for task in self:
+            if not task.parent_id:
+                task.family_root_task_id = task
+            else:
+                task.family_root_task_id = (
+                    task.parent_id.family_root_task_id or task.parent_id
+                )
 
     def write(self, vals):
         stage_id = vals.get("stage_id")
@@ -44,6 +75,8 @@ class ProjectTask(models.Model):
         )
         warn_by_task = {}
         warn_details_by_task = {}
+        dependency_warn_by_task = {}
+        dependency_warn_details_by_task = {}
         planned_fields = {"planned_date_start", "planned_date_end"}
         track_planned_dates = bool(planned_fields & vals.keys())
         previous_dates = {}
@@ -88,6 +121,43 @@ class ProjectTask(models.Model):
                     details=first_details,
                 )
             )
+        new_state = vals.get("state")
+        if new_state in TASK_CLOSED_STATES:
+            for task in self:
+                incomplete_tasks = task._get_incomplete_dependency_tasks()
+                if not incomplete_tasks:
+                    continue
+                details = task._format_dependency_issue_lines(incomplete_tasks)
+                if task.dependency_enforcement == "warn":
+                    if not self.env.context.get("allow_dependency_warn_close_confirm"):
+                        action = self.env.ref(
+                            "project_task_stage_dependency.action_project_task_dependency_close_warn_wizard_v2"
+                        )
+                        raise RedirectWarning(
+                            _(
+                                "Advertencia\n"
+                                "Hay tareas bloqueantes pendientes en modo Advertir:\n%(details)s",
+                                details=details,
+                            ),
+                            action.id,
+                            _("Confirmar cierre"),
+                            {"default_task_id": task.id},
+                        )
+                    dependency_warn_by_task[task.id] = _(
+                        "La tarea se marcara como hecha igualmente, pero tenga en cuenta "
+                        "que hay tareas bloqueantes pendientes:\n%(details)s",
+                        details=details,
+                    )
+                    dependency_warn_details_by_task[task.id] = details
+                    continue
+                raise ValidationError(
+                    _(
+                        "Bloqueo\n"
+                        "No puede marcar la tarea como hecha porque hay tareas bloqueantes pendientes:\n"
+                        "%(details)s",
+                        details=details,
+                    )
+                )
         res = super().write(vals)
         warned_tasks = self.filtered(lambda task: warn_by_task.get(task.id))
         if warned_tasks.filtered("warn_stage_change_ack"):
@@ -102,9 +172,50 @@ class ProjectTask(models.Model):
                     message_type="comment",
                     subtype_xmlid="mail.mt_note",
                 )
+            dependency_warning_message = dependency_warn_by_task.get(task.id)
+            if dependency_warning_message:
+                task.message_post(
+                    body=_("Advertencia\n%(message)s", message=dependency_warning_message),
+                    message_type="comment",
+                    subtype_xmlid="mail.mt_note",
+                )
         if track_planned_dates:
             self._log_planned_date_changes(previous_dates, vals)
         return res
+
+    def action_open_dependency_close_warn_wizard(self):
+        self.ensure_one()
+        if self.state in TASK_CLOSED_STATES:
+            return False
+        incomplete_tasks = self._get_incomplete_dependency_tasks()
+        if not incomplete_tasks:
+            self.write({"state": "1_done"})
+            return False
+        if self.dependency_enforcement != "warn":
+            raise ValidationError(
+                _(
+                    "Esta tarea esta en modo Bloquear. Complete primero las tareas bloqueantes."
+                )
+            )
+        details = self._format_dependency_issue_lines(incomplete_tasks)
+        wizard = self.env["project.task.dependency.close.warn.wizard"].create(
+            {
+                "task_id": self.id,
+                "warning_message": _(
+                    "La tarea se marcara como hecha igualmente, pero tenga en cuenta "
+                    "que hay tareas bloqueantes pendientes:\n%(details)s",
+                    details=details,
+                ),
+            }
+        )
+        return {
+            "name": _("Confirmar cierre con advertencia"),
+            "type": "ir.actions.act_window",
+            "res_model": "project.task.dependency.close.warn.wizard",
+            "view_mode": "form",
+            "res_id": wizard.id,
+            "target": "new",
+        }
 
     @api.onchange("stage_id")
     def _onchange_stage_dependency_warning(self):
@@ -144,10 +255,34 @@ class ProjectTask(models.Model):
                         }
                     }
 
-    def _check_dependency_tasks_for_stage_change(self):
-        incomplete_tasks = self.dependency_task_ids.filtered(
+    @api.onchange("state")
+    def _onchange_state_dependency_warning(self):
+        for task in self:
+            if task.state not in TASK_CLOSED_STATES or task.state == task._origin.state:
+                continue
+            incomplete_tasks = task._get_incomplete_dependency_tasks()
+            if not incomplete_tasks:
+                continue
+            details = self._format_dependency_issue_lines(incomplete_tasks)
+            if task.dependency_enforcement == "warn":
+                return {
+                    "warning": {
+                        "title": _("Advertencia"),
+                        "message": _(
+                            "La tarea se marcara como hecha igualmente, pero tenga en cuenta "
+                            "que hay tareas bloqueantes pendientes:\n%(details)s",
+                            details=details,
+                        ),
+                    }
+                }
+
+    def _get_incomplete_dependency_tasks(self):
+        return self.dependency_task_ids.filtered(
             lambda dependency_task: not dependency_task.is_closed
         )
+
+    def _check_dependency_tasks_for_stage_change(self):
+        incomplete_tasks = self._get_incomplete_dependency_tasks()
         if incomplete_tasks:
             raise ValidationError(
                 _(

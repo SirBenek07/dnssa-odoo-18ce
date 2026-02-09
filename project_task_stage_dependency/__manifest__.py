@@ -7,6 +7,10 @@
     "website": "https://github.com/Versiones",
     "license": "AGPL-3",
     "depends": ["project"],
-    "data": ["views/project_task_views.xml"],
+    "data": [
+        "security/ir.model.access.csv",
+        "views/project_task_views.xml",
+        "views/project_task_dependency_close_warn_wizard_views.xml",
+    ],
     "installable": True,
 }

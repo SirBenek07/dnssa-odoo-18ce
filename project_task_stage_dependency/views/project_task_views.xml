@@ -17,6 +17,9 @@
                     domain="[('project_ids', '=', project_id)]"
                 />
             </xpath>
+            <xpath expr="//field[@name='state']" position="attributes">
+                <attribute name="context">{'allow_warn_dependency_close': True}</attribute>
+            </xpath>
             <xpath expr="//field[@name='stage_id']" position="attributes">
                 <attribute name="invisible" add="parent_id" separator=" or " />
                 <attribute name="context">{'allow_warn_stage_change': True}</attribute>
@@ -42,9 +45,19 @@
                         <field
                             name="dependency_task_ids"
                             widget="many2many_tags"
-                            domain="['&amp;', ('project_id', '=', project_id), ('id', '!=', id)]"
+                            domain="[
+                                '&amp;', '&amp;',
+                                ('project_id', '=', project_id),
+                                ('id', '!=', id),
+                                ('family_root_task_id', '=', family_root_task_id)
+                            ]"
                             options="{'color_field': 'color'}"
                             context="{'default_project_id': project_id}"
+                        />
+                        <field
+                            name="dependency_enforcement"
+                            groups="project.group_project_manager"
+                            invisible="not dependency_task_ids"
                         />
                     </group>
                 </page>
