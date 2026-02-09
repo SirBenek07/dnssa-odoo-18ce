@@ -1,2 +1,2 @@
-﻿id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_project_cash_flow_wizard_user,project.cash.flow.wizard user,model_project_cash_flow_wizard,account.group_account_readonly,1,1,1,1
