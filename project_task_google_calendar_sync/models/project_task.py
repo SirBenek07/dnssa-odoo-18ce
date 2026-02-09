@@ -20,6 +20,7 @@ class ProjectTask(models.Model):
             "active",
             "user_ids",
             "project_id",
+            "parent_id",
             "date_deadline",
             "stage_id",
             "planned_date_start",
@@ -78,9 +79,18 @@ class ProjectTask(models.Model):
         project_name = self.project_id.display_name if self.project_id else "-"
         lines = [f"[Proyecto] {project_name}"]
         if self.parent_id:
-            lines.append(f"[Evento] {self.parent_id.display_name}")
+            lines.append(f"[Evento] {self._get_root_parent_task().display_name}")
         lines.append(f"[Tarea] {self.display_name}")
         return "\n".join(lines)
+
+    def _get_root_parent_task(self):
+        self.ensure_one()
+        task = self
+        visited = set()
+        while task.parent_id and task.id not in visited:
+            visited.add(task.id)
+            task = task.parent_id
+        return task
 
     def _remove_task_calendar_event(self, event):
         owner = event.user_id or event.project_task_assignee_id or self.env.user
