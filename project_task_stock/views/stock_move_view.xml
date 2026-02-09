@@ -57,7 +57,7 @@
                     invisible="not product_id or state in ['done', 'cancel']"
                 />
                 <field name="product_uom_category_id" column_invisible="1" />
-                <field name="quantity" string="Consumed" readonly="1" />
+                <field name="quantity" string="Reservado" readonly="1" />
                 <field name="group_id" column_invisible="1" />
             </list>
         </field>
