@@ -15,6 +15,15 @@
                 >
                     <field name="purchase_line_count" widget="statinfo" string="Compras"/>
                 </button>
+                <button
+                    type="object"
+                    name="action_view_expenses"
+                    class="oe_stat_button"
+                    icon="fa-money"
+                    groups="base.group_user"
+                >
+                    <field name="expense_count" widget="statinfo" string="Gastos"/>
+                </button>
             </xpath>
         </field>
     </record>

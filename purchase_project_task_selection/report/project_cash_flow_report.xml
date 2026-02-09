@@ -65,10 +65,10 @@
                             <tr style="background-color: #f4efb2; font-weight: bold;">
                                 <td colspan="99">2. Detalle de Egresos</td>
                             </tr>
-                            <t t-foreach="data['lines']" t-as="line">
+                            <t t-foreach="data['expense_task_lines']" t-as="line">
                                 <tr>
                                     <td>
-                                        <span t-esc="line['project'].display_name"/>
+                                        <span t-esc="line['label']"/>
                                     </td>
                                     <t t-foreach="data['periods']" t-as="period">
                                         <td class="text-end">

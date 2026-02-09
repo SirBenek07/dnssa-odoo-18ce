@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_expense_form_parent_task_selection" model="ir.ui.view">
+        <field name="name">hr.expense.form.parent.task.selection</field>
+        <field name="model">hr.expense</field>
+        <field name="inherit_id" ref="hr_expense.hr_expense_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='analytic_distribution']" position="after">
+                <field name="expense_project_id" invisible="1"/>
+                <field name="parent_task_id" options="{'no_open': True}" readonly="not is_editable"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

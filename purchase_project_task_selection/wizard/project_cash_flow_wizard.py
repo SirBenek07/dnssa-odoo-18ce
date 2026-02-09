@@ -30,7 +30,7 @@ class ProjectCashFlowWizard(models.TransientModel):
     include_order_links_fallback = fields.Boolean(
         string="Usar compra/venta como respaldo",
         default=True,
-        help="Si una linea no tiene asociacion analitica a proyecto, se intentara asociar por vinculos de compra/venta.",
+        help="Si una linea analitica no tiene proyecto directo, se intentara asociar por vinculos de compra/venta.",
     )
     company_id = fields.Many2one(
         comodel_name="res.company",
@@ -90,52 +90,108 @@ class ProjectCashFlowWizard(models.TransientModel):
             cursor = next_month
         return periods
 
-    def _line_project_shares(
+    def _analytic_line_project_ids(self, line, selected_project_ids, analytic_to_project):
+        project_ids = set()
+
+        # Primary source: project directly stored in analytic line.
+        if "project_id" in line._fields and line.project_id:
+            project_ids.add(line.project_id.id)
+
+        # Secondary source: map analytic account to project.
+        if not project_ids and "account_id" in line._fields and line.account_id:
+            mapped_project_id = analytic_to_project.get(line.account_id.id)
+            if mapped_project_id:
+                project_ids.add(mapped_project_id)
+
+        # Optional fallback via linked accounting line purchase/sale references.
+        move_line = getattr(line, "move_line_id", False)
+        if (
+            not project_ids
+            and self.include_order_links_fallback
+            and move_line
+            and move_line.exists()
+        ):
+            if "sale_line_ids" in move_line._fields:
+                project_ids.update(move_line.sale_line_ids.mapped("project_id").ids)
+            if (
+                "purchase_line_id" in move_line._fields
+                and move_line.purchase_line_id
+                and move_line.purchase_line_id.project_id
+            ):
+                project_ids.add(move_line.purchase_line_id.project_id.id)
+
+        return sorted(project_ids.intersection(selected_project_ids))
+
+    def _get_direct_main_task_for_expense(self, line):
+        task = False
+        if "task_id" in line._fields and line.task_id:
+            task = line.task_id
+        move_line = getattr(line, "move_line_id", False)
+        if not task and move_line and move_line.exists():
+            expense = (
+                move_line.expense_id
+                if "expense_id" in move_line._fields
+                else self.env["hr.expense"]
+            )
+            if expense and "parent_task_id" in expense._fields and expense.parent_task_id:
+                task = expense.parent_task_id
+            if (
+                not task
+                and "purchase_line_id" in move_line._fields
+                and move_line.purchase_line_id
+                and move_line.purchase_line_id.task_id
+            ):
+                task = move_line.purchase_line_id.task_id
+        if not task:
+            return False
+        return task.parent_id or task
+
+    def _get_main_task_for_expense(
         self,
         line,
+        project_id,
+        sibling_task_cache,
         selected_project_ids,
         analytic_to_project,
-        has_sale_link,
-        has_purchase_link,
     ):
-        project_shares = defaultdict(float)
+        direct_task = self._get_direct_main_task_for_expense(line)
+        if direct_task:
+            return direct_task
 
-        # Primary source: analytic distribution in accounting entries.
-        if "analytic_distribution" in line._fields and line.analytic_distribution:
-            for key, percent in line.analytic_distribution.items():
-                analytic_ids = [int(analytic_id) for analytic_id in key.split(",")]
-                if not analytic_ids:
-                    continue
-                share = (float(percent or 0.0) / 100.0) / len(analytic_ids)
-                for analytic_id in analytic_ids:
-                    project_id = analytic_to_project.get(analytic_id)
-                    if project_id and project_id in selected_project_ids:
-                        project_shares[project_id] += share
+        move_line = getattr(line, "move_line_id", False)
+        if not move_line or not move_line.exists() or not move_line.move_id:
+            return False
 
-        # Secondary source: explicit analytic account field if present.
-        if (
-            not project_shares
-            and "analytic_account_id" in line._fields
-            and line.analytic_account_id
-        ):
-            project_id = analytic_to_project.get(line.analytic_account_id.id)
-            if project_id and project_id in selected_project_ids:
-                project_shares[project_id] = 1.0
+        cache_key = (move_line.move_id.id, project_id)
+        if cache_key in sibling_task_cache:
+            return sibling_task_cache[cache_key]
 
-        # Fallback source: links from sale/purchase lines.
-        if not project_shares and self.include_order_links_fallback:
-            project_ids = set()
-            if has_sale_link:
-                project_ids.update(line.sale_line_ids.mapped("project_id").ids)
-            if has_purchase_link and line.purchase_line_id.project_id:
-                project_ids.add(line.purchase_line_id.project_id.id)
-            project_ids = sorted(project_ids.intersection(selected_project_ids))
-            if project_ids:
-                share = 1.0 / len(project_ids)
-                for project_id in project_ids:
-                    project_shares[project_id] = share
+        analytic_line_model = self.env["account.analytic.line"]
+        sibling_domain = [
+            ("move_line_id.move_id", "=", move_line.move_id.id),
+            ("id", "!=", line.id),
+            ("amount", "<", 0),
+        ]
 
-        return dict(project_shares)
+        sibling_lines = analytic_line_model.search(sibling_domain, order="id")
+        best_task = False
+        best_amount = 0.0
+        for sibling in sibling_lines:
+            sibling_project_ids = self._analytic_line_project_ids(
+                sibling, selected_project_ids, analytic_to_project
+            )
+            if project_id not in sibling_project_ids:
+                continue
+            sibling_task = self._get_direct_main_task_for_expense(sibling)
+            if not sibling_task:
+                continue
+            amount = abs(sibling.amount or 0.0)
+            if amount >= best_amount:
+                best_task = sibling_task
+                best_amount = amount
+
+        sibling_task_cache[cache_key] = best_task
+        return best_task
 
     def _prepare_report_data(self):
         self.ensure_one()
@@ -144,20 +200,26 @@ class ProjectCashFlowWizard(models.TransientModel):
         if not periods:
             return {"periods": [], "lines": [], "totals": {}}
 
-        move_line_model = self.env["account.move.line"]
-        has_sale_link = "sale_line_ids" in move_line_model._fields
-        has_purchase_link = "purchase_line_id" in move_line_model._fields
+        analytic_line_model = self.env["account.analytic.line"]
+        project_model = self.env["project.project"]
 
         selected_project_ids = set(projects.ids)
-        analytic_to_project = {
-            project.analytic_account_id.id: project.id
-            for project in projects
-            if project.analytic_account_id
-        }
+        project_analytic_field = next(
+            (
+                field_name
+                for field_name in ("account_id", "analytic_account_id")
+                if field_name in project_model._fields
+            ),
+            False,
+        )
+        analytic_to_project = {}
+        if project_analytic_field:
+            for project in projects:
+                analytic_account = project[project_analytic_field]
+                if analytic_account:
+                    analytic_to_project[analytic_account.id] = project.id
 
         period_keys = [period["key"] for period in periods]
-        income_move_types = {"out_invoice", "out_receipt", "out_refund"}
-        expense_move_types = {"in_invoice", "in_receipt", "in_refund"}
 
         grouped = {
             project.id: {
@@ -167,39 +229,55 @@ class ProjectCashFlowWizard(models.TransientModel):
             }
             for project in projects
         }
+        expense_detail_by_task = {}
 
-        domain = [
-            ("parent_state", "=", "posted"),
-            ("move_id.move_type", "in", sorted(income_move_types | expense_move_types)),
-            ("display_type", "=", False),
+        analytic_domain = [
             ("date", ">=", self.date_from),
             ("date", "<=", self.date_to),
+            ("company_id", "=", self.company_id.id),
         ]
 
-        for line in move_line_model.search(domain):
+        sibling_task_cache = {}
+        for line in analytic_line_model.search(analytic_domain):
             period_key = fields.Date.to_date(line.date).strftime("%Y-%m")
             if period_key not in period_keys:
                 continue
-            project_shares = self._line_project_shares(
-                line,
-                selected_project_ids,
-                analytic_to_project,
-                has_sale_link,
-                has_purchase_link,
+
+            project_ids = self._analytic_line_project_ids(
+                line, selected_project_ids, analytic_to_project
             )
-            if not project_shares:
+            if not project_ids:
                 continue
 
-            move_type = line.move_id.move_type
-            if move_type in income_move_types:
-                signed_amount = -line.balance
-                bucket = "income"
-            else:
-                signed_amount = line.balance
-                bucket = "expense"
-
-            for project_id, share in project_shares.items():
-                grouped[project_id][bucket][period_key] += signed_amount * share
+            signed_amount = line.amount or 0.0
+            split_amount = signed_amount / len(project_ids)
+            for project_id in project_ids:
+                if split_amount >= 0:
+                    grouped[project_id]["income"][period_key] += split_amount
+                else:
+                    main_task = self._get_main_task_for_expense(
+                        line,
+                        project_id,
+                        sibling_task_cache,
+                        selected_project_ids,
+                        analytic_to_project,
+                    )
+                    expense_amount = abs(split_amount)
+                    grouped[project_id]["expense"][period_key] += expense_amount
+                    detail_key = (project_id, main_task.id if main_task else 0)
+                    if detail_key not in expense_detail_by_task:
+                        project = grouped[project_id]["project"]
+                        expense_detail_by_task[detail_key] = {
+                            "project": project,
+                            "task": main_task,
+                            "label": (
+                                f"{project.display_name} / {main_task.display_name}"
+                                if main_task
+                                else f"{project.display_name} / Sin tarea principal"
+                            ),
+                            "expense": defaultdict(float),
+                        }
+                    expense_detail_by_task[detail_key]["expense"][period_key] += expense_amount
 
         lines = []
         total_income = defaultdict(float)
@@ -229,6 +307,27 @@ class ProjectCashFlowWizard(models.TransientModel):
                 total_expense[key] += expense
             lines.append(line_vals)
 
+        expense_task_lines = []
+        for detail in sorted(
+            expense_detail_by_task.values(),
+            key=lambda item: (
+                item["project"].display_name or "",
+                item["task"].display_name if item["task"] else "",
+            ),
+        ):
+            vals = {
+                "label": detail["label"],
+                "project": detail["project"],
+                "task": detail["task"],
+                "expense": {},
+                "total": 0.0,
+            }
+            for period in periods:
+                amount = detail["expense"].get(period["key"], 0.0)
+                vals["expense"][period["key"]] = amount
+                vals["total"] += amount
+            expense_task_lines.append(vals)
+
         totals = {"income": {}, "expense": {}, "net": {}, "accumulated": {}}
         running_total = 0.0
         for period in periods:
@@ -245,6 +344,7 @@ class ProjectCashFlowWizard(models.TransientModel):
         return {
             "periods": periods,
             "lines": lines,
+            "expense_task_lines": expense_task_lines,
             "totals": totals,
             "currency": self.company_id.currency_id,
             "date_from": self.date_from,
