@@ -4,7 +4,7 @@
     <field name="name">project.task.tool.line.quick.report.list</field>
     <field name="model">project.task.tool.line</field>
     <field name="arch" type="xml">
-      <list string="Reporte rapido de recursos" decoration-danger="is_currently_in_use" decoration-muted="state == 'returned'">
+      <list string="Reporte de recursos" decoration-danger="is_currently_in_use" decoration-muted="state == 'returned'">
         <field name="resource_name"/>
         <field name="resource_type"/>
         <field name="date_from"/>
@@ -52,12 +52,12 @@
   </record>
 
   <record id="action_project_task_resource_quick_report" model="ir.actions.act_window">
-    <field name="name">Reporte rapido de recursos</field>
+    <field name="name">Reporte de recursos</field>
     <field name="res_model">project.task.tool.line</field>
     <field name="view_mode">list,calendar,form</field>
     <field name="search_view_id" ref="view_project_task_resource_report_search"/>
     <field name="context">{'search_default_active_or_future': 1}</field>
   </record>
 
-  <menuitem id="menu_project_task_resource_quick_report" name="Reporte rapido de recursos" parent="project.menu_main_pm" action="action_project_task_resource_quick_report" sequence="80" groups="project.group_project_user,project.group_project_manager"/>
+  <menuitem id="menu_project_task_resource_quick_report" name="Reporte de recursos" parent="project.menu_main_pm" action="action_project_task_resource_quick_report" sequence="80" groups="project.group_project_user,project.group_project_manager"/>
 </odoo>
