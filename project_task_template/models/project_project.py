@@ -171,6 +171,7 @@ class ProjectProject(models.Model):
                 "company_id": self.company_id.id,
                 "template_offset_days": template_task.template_offset_days,
                 "template_offset_direction": template_task.template_offset_direction,
+                "template_business_days_only": template_task.template_business_days_only,
                 "is_task_template": False,
                 "completion_stage_enforcement": template_task.completion_stage_enforcement,
             }
@@ -321,11 +322,26 @@ class ProjectProject(models.Model):
             base_date = root_date_end
             days = template_task.template_offset_days
 
-        planned_date = base_date + timedelta(days=days)
+        if template_task.template_business_days_only:
+            planned_date = self._add_business_days(base_date, days)
+        else:
+            planned_date = base_date + timedelta(days=days)
         return {
             "planned_date_start": planned_date,
             "planned_date_end": planned_date,
         }
+
+    def _add_business_days(self, base_date, days):
+        if not base_date or not days:
+            return base_date
+        step = 1 if days > 0 else -1
+        remaining = abs(days)
+        current = base_date
+        while remaining:
+            current = current + timedelta(days=step)
+            if current.weekday() < 5:
+                remaining -= 1
+        return current
 
     def _map_stage(self, template_stage, stage_by_name):
         if not template_stage:

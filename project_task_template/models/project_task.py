@@ -27,6 +27,10 @@ class ProjectTask(models.Model):
         string="Dias",
         default=0,
     )
+    template_business_days_only = fields.Boolean(
+        string="Solo dias habiles (Lun-Vie)",
+        default=True,
+    )
     template_offset_direction = fields.Selection(
         selection=[
             ("before", "Antes"),

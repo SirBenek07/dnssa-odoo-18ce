@@ -60,6 +60,7 @@
                         <field name="template_area_ids" widget="many2many_tags" />
                         <field name="template_offset_days" />
                         <field name="template_offset_direction" />
+                        <field name="template_business_days_only" />
                     </group>
                 </page>
             </xpath>
