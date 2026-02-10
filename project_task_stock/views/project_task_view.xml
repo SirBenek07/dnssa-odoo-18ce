@@ -108,7 +108,7 @@
                 <field name="use_stock_moves" invisible="1" />
                 <page
                     name="stock_info"
-                    string="Stock Info"
+                    string="Insumos"
                     invisible="not use_stock_moves"
                     groups="stock.group_stock_user"
                 >
@@ -127,7 +127,7 @@
             </xpath>
             <xpath expr="///page[@name='extra_info']/group[1]" position="inside">
                 <group
-                    string="Stock Info"
+                    string="Insumos"
                     name="stock_info_misc"
                     groups="stock.group_stock_user"
                     invisible="not use_stock_moves"
