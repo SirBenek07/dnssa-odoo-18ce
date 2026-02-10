@@ -12,12 +12,13 @@
                     </group>
                     <group>
                         <field name="company_id" groups="base.group_multi_company"/>
+                        <field name="analytic_account_ids" widget="many2many_tags" options="{'no_create': True}"/>
                         <field name="project_ids" widget="many2many_tags" options="{'no_create': True}"/>
                         <field name="include_order_links_fallback"/>
                     </group>
                 </group>
                 <div class="text-muted o_form_label">
-                    Si no se seleccionan proyectos, se incluyen todos los proyectos de la compania actual.
+                    Puede filtrar por cuentas analiticas y/o por proyectos. Si no selecciona filtros, se incluyen todos los proyectos de la compania actual.
                 </div>
                 <footer>
                     <button name="action_print_report" type="object" string="Imprimir PDF" class="btn-primary"/>
@@ -38,7 +39,7 @@
     <menuitem
         id="menu_project_cash_flow_wizard"
         name="Flujo de caja por proyecto"
-        parent="project.menu_main_pm"
+        parent="account.menu_finance_reports"
         action="action_project_cash_flow_wizard"
         sequence="85"
         groups="account.group_account_readonly"

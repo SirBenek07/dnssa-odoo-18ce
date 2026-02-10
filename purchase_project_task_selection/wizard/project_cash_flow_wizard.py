@@ -27,6 +27,15 @@ class ProjectCashFlowWizard(models.TransientModel):
         string="Proyectos",
         help="Si no selecciona proyectos, se incluiran todos los proyectos de la compania.",
     )
+    analytic_account_ids = fields.Many2many(
+        comodel_name="account.analytic.account",
+        string="Cuentas analiticas",
+        domain="[('company_id', 'in', [False, company_id])]",
+        help=(
+            "Filtro opcional por cuentas analiticas. "
+            "Incluye cuentas hijas (jerarquia) al buscar proyectos."
+        ),
+    )
     include_order_links_fallback = fields.Boolean(
         string="Usar compra/venta como respaldo",
         default=True,
@@ -47,6 +56,8 @@ class ProjectCashFlowWizard(models.TransientModel):
         active_ids = self.env.context.get("active_ids") or []
         if active_model == "project.project" and active_ids:
             vals["project_ids"] = [(6, 0, active_ids)]
+        elif active_model == "account.analytic.account" and active_ids:
+            vals["analytic_account_ids"] = [(6, 0, active_ids)]
         return vals
 
     @api.constrains("date_from", "date_to")
@@ -63,12 +74,37 @@ class ProjectCashFlowWizard(models.TransientModel):
 
     def _get_selected_projects(self):
         self.ensure_one()
-        if self.project_ids:
-            return self.project_ids
-        return self.env["project.project"].search(
+        projects = self.env["project.project"].search(
             [("company_id", "in", [False, self.company_id.id])],
             order="name",
         )
+        if self.project_ids:
+            projects = self.project_ids
+
+        if not self.analytic_account_ids:
+            return projects
+
+        project_analytic_field = next(
+            (
+                field_name
+                for field_name in ("account_id", "analytic_account_id")
+                if field_name in projects._fields
+            ),
+            False,
+        )
+        if not project_analytic_field:
+            return self.env["project.project"]
+
+        allowed_analytic_ids = set(
+            self.env["account.analytic.account"]
+            .search([("id", "child_of", self.analytic_account_ids.ids)])
+            .ids
+        )
+        projects = projects.filtered(
+            lambda project: project[project_analytic_field]
+            and project[project_analytic_field].id in allowed_analytic_ids
+        )
+        return projects.sorted("name")
 
     def _get_periods(self):
         self.ensure_one()
@@ -121,6 +157,142 @@ class ProjectCashFlowWizard(models.TransientModel):
                 project_ids.add(move_line.purchase_line_id.project_id.id)
 
         return sorted(project_ids.intersection(selected_project_ids))
+
+    def _build_analytic_to_project_map(self, projects, project_analytic_field):
+        """Map analytic accounts to selected projects.
+
+        Supports analytic hierarchies (account_analytic_parent) by resolving
+        descendants to the closest selected project analytic ancestor.
+        """
+        analytic_to_project = {}
+        if not project_analytic_field:
+            return analytic_to_project
+
+        root_to_project = {}
+        for project in projects:
+            analytic_account = project[project_analytic_field]
+            if analytic_account:
+                root_to_project[analytic_account.id] = project.id
+
+        if not root_to_project:
+            return analytic_to_project
+
+        analytic_model = self.env["account.analytic.account"].with_context(active_test=False)
+        descendants = analytic_model.search([("id", "child_of", list(root_to_project))])
+        parent_by_id = {account.id: account.parent_id.id for account in descendants}
+
+        for account in descendants:
+            current_id = account.id
+            depth = 0
+            best_root_id = False
+            best_depth = -1
+            while current_id:
+                if current_id in root_to_project and depth > best_depth:
+                    best_root_id = current_id
+                    best_depth = depth
+                current_id = parent_by_id.get(current_id)
+                depth += 1
+            if best_root_id:
+                analytic_to_project[account.id] = root_to_project[best_root_id]
+
+        return analytic_to_project
+
+    def _is_analytic_ancestor_of(self, ancestor_account, descendant_account):
+        if not ancestor_account or not descendant_account:
+            return False
+        if ancestor_account == descendant_account:
+            return False
+        if "parent_path" in descendant_account._fields and descendant_account.parent_path:
+            parent_ids = [
+                int(item)
+                for item in descendant_account.parent_path.split("/")
+                if item and item.isdigit()
+            ]
+            return ancestor_account.id in parent_ids
+        current = descendant_account.parent_id
+        while current:
+            if current.id == ancestor_account.id:
+                return True
+            current = current.parent_id
+        return False
+
+    def _analytic_depth(self, account):
+        if not account:
+            return 0
+        if "parent_path" in account._fields and account.parent_path:
+            return len([item for item in account.parent_path.split("/") if item])
+        depth = 0
+        current = account
+        while current:
+            depth += 1
+            current = current.parent_id
+        return depth
+
+    def _pick_selected_parent_for_label(self, line_analytic, project_analytic):
+        """Return the best selected analytic account for grouped label.
+
+        If the user filtered by analytic accounts and one selected account is an
+        ancestor (or the same account) of both the project analytic and line analytic,
+        use it as label root (e.g. "Cuenta Madre / Proyecto").
+        """
+        selected = self.analytic_account_ids
+        if not selected or not project_analytic:
+            return False
+
+        candidates = selected.filtered(
+            lambda account: (
+                account == project_analytic
+                or self._is_analytic_ancestor_of(account, project_analytic)
+            )
+            and (
+                not line_analytic
+                or account == line_analytic
+                or self._is_analytic_ancestor_of(account, line_analytic)
+            )
+        )
+        if not candidates:
+            return False
+        return max(candidates, key=lambda account: self._analytic_depth(account))
+
+    def _build_detail_descriptor(self, line, project, main_task, project_analytic_field):
+        line_analytic = (
+            line.account_id
+            if "account_id" in line._fields and line.account_id
+            else self.env["account.analytic.account"]
+        )
+        project_analytic = (
+            project[project_analytic_field]
+            if project_analytic_field and project_analytic_field in project._fields
+            else self.env["account.analytic.account"]
+        )
+
+        selected_parent = self._pick_selected_parent_for_label(
+            line_analytic=line_analytic,
+            project_analytic=project_analytic,
+        )
+        if selected_parent:
+            return {
+                "key": (project.id, "selected_analytic", selected_parent.id),
+                "label": f"{selected_parent.display_name} / {project.display_name}",
+                "task": False,
+            }
+
+        if self._is_analytic_ancestor_of(line_analytic, project_analytic):
+            return {
+                "key": (project.id, "analytic_parent", line_analytic.id),
+                "label": f"{line_analytic.display_name} / {project.display_name}",
+                "task": False,
+            }
+
+        return {
+            "key": (project.id, "task", main_task.id if main_task else 0),
+            "label": (
+                f"{project.display_name} / {main_task.display_name}"
+                if main_task
+                else f"{project.display_name} / Sin tarea principal"
+            ),
+            "task": main_task,
+        }
 
     def _get_direct_main_task_for_line(self, line):
         task = False
@@ -224,12 +396,9 @@ class ProjectCashFlowWizard(models.TransientModel):
             ),
             False,
         )
-        analytic_to_project = {}
-        if project_analytic_field:
-            for project in projects:
-                analytic_account = project[project_analytic_field]
-                if analytic_account:
-                    analytic_to_project[analytic_account.id] = project.id
+        analytic_to_project = self._build_analytic_to_project_map(
+            projects, project_analytic_field
+        )
 
         period_keys = [period["key"] for period in periods]
 
@@ -265,6 +434,7 @@ class ProjectCashFlowWizard(models.TransientModel):
             signed_amount = line.amount or 0.0
             split_amount = signed_amount / len(project_ids)
             for project_id in project_ids:
+                project = grouped[project_id]["project"]
                 main_task = self._get_main_task_for_line(
                     line,
                     project_id,
@@ -273,19 +443,21 @@ class ProjectCashFlowWizard(models.TransientModel):
                     analytic_to_project,
                     split_amount,
                 )
-                detail_key = (project_id, main_task.id if main_task else 0)
-                project = grouped[project_id]["project"]
-                label = (
-                    f"{project.display_name} / {main_task.display_name}"
-                    if main_task
-                    else f"{project.display_name} / Sin tarea principal"
+                detail_descriptor = self._build_detail_descriptor(
+                    line=line,
+                    project=project,
+                    main_task=main_task,
+                    project_analytic_field=project_analytic_field,
                 )
+                detail_key = detail_descriptor["key"]
+                label = detail_descriptor["label"]
+                detail_task = detail_descriptor["task"]
                 if split_amount >= 0:
                     grouped[project_id]["income"][period_key] += split_amount
                     if detail_key not in income_detail_by_task:
                         income_detail_by_task[detail_key] = {
                             "project": project,
-                            "task": main_task,
+                            "task": detail_task,
                             "label": label,
                             "income": defaultdict(float),
                         }
@@ -296,7 +468,7 @@ class ProjectCashFlowWizard(models.TransientModel):
                     if detail_key not in expense_detail_by_task:
                         expense_detail_by_task[detail_key] = {
                             "project": project,
-                            "task": main_task,
+                            "task": detail_task,
                             "label": label,
                             "expense": defaultdict(float),
                         }
