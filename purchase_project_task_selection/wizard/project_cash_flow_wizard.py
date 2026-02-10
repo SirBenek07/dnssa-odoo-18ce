@@ -122,7 +122,7 @@ class ProjectCashFlowWizard(models.TransientModel):
 
         return sorted(project_ids.intersection(selected_project_ids))
 
-    def _get_direct_main_task_for_expense(self, line):
+    def _get_direct_main_task_for_line(self, line):
         task = False
         # Stock consumptions created by project_task_stock store the task link
         # in account.analytic.line.stock_task_id.
@@ -146,19 +146,26 @@ class ProjectCashFlowWizard(models.TransientModel):
                 and move_line.purchase_line_id.task_id
             ):
                 task = move_line.purchase_line_id.task_id
+            if (
+                not task
+                and "sale_line_ids" in move_line._fields
+                and move_line.sale_line_ids
+            ):
+                task = move_line.sale_line_ids.filtered("task_id")[:1].task_id
         if not task:
             return False
         return task.parent_id or task
 
-    def _get_main_task_for_expense(
+    def _get_main_task_for_line(
         self,
         line,
         project_id,
         sibling_task_cache,
         selected_project_ids,
         analytic_to_project,
+        signed_amount,
     ):
-        direct_task = self._get_direct_main_task_for_expense(line)
+        direct_task = self._get_direct_main_task_for_line(line)
         if direct_task:
             return direct_task
 
@@ -166,7 +173,8 @@ class ProjectCashFlowWizard(models.TransientModel):
         if not move_line or not move_line.exists() or not move_line.move_id:
             return False
 
-        cache_key = (move_line.move_id.id, project_id)
+        is_positive = signed_amount >= 0
+        cache_key = (move_line.move_id.id, project_id, is_positive)
         if cache_key in sibling_task_cache:
             return sibling_task_cache[cache_key]
 
@@ -174,7 +182,7 @@ class ProjectCashFlowWizard(models.TransientModel):
         sibling_domain = [
             ("move_line_id.move_id", "=", move_line.move_id.id),
             ("id", "!=", line.id),
-            ("amount", "<", 0),
+            ("amount", ">=", 0) if is_positive else ("amount", "<", 0),
         ]
 
         sibling_lines = analytic_line_model.search(sibling_domain, order="id")
@@ -186,7 +194,7 @@ class ProjectCashFlowWizard(models.TransientModel):
             )
             if project_id not in sibling_project_ids:
                 continue
-            sibling_task = self._get_direct_main_task_for_expense(sibling)
+            sibling_task = self._get_direct_main_task_for_line(sibling)
             if not sibling_task:
                 continue
             amount = abs(sibling.amount or 0.0)
@@ -233,6 +241,7 @@ class ProjectCashFlowWizard(models.TransientModel):
             }
             for project in projects
         }
+        income_detail_by_task = {}
         expense_detail_by_task = {}
 
         analytic_domain = [
@@ -256,29 +265,39 @@ class ProjectCashFlowWizard(models.TransientModel):
             signed_amount = line.amount or 0.0
             split_amount = signed_amount / len(project_ids)
             for project_id in project_ids:
+                main_task = self._get_main_task_for_line(
+                    line,
+                    project_id,
+                    sibling_task_cache,
+                    selected_project_ids,
+                    analytic_to_project,
+                    split_amount,
+                )
+                detail_key = (project_id, main_task.id if main_task else 0)
+                project = grouped[project_id]["project"]
+                label = (
+                    f"{project.display_name} / {main_task.display_name}"
+                    if main_task
+                    else f"{project.display_name} / Sin tarea principal"
+                )
                 if split_amount >= 0:
                     grouped[project_id]["income"][period_key] += split_amount
+                    if detail_key not in income_detail_by_task:
+                        income_detail_by_task[detail_key] = {
+                            "project": project,
+                            "task": main_task,
+                            "label": label,
+                            "income": defaultdict(float),
+                        }
+                    income_detail_by_task[detail_key]["income"][period_key] += split_amount
                 else:
-                    main_task = self._get_main_task_for_expense(
-                        line,
-                        project_id,
-                        sibling_task_cache,
-                        selected_project_ids,
-                        analytic_to_project,
-                    )
                     expense_amount = abs(split_amount)
                     grouped[project_id]["expense"][period_key] += expense_amount
-                    detail_key = (project_id, main_task.id if main_task else 0)
                     if detail_key not in expense_detail_by_task:
-                        project = grouped[project_id]["project"]
                         expense_detail_by_task[detail_key] = {
                             "project": project,
                             "task": main_task,
-                            "label": (
-                                f"{project.display_name} / {main_task.display_name}"
-                                if main_task
-                                else f"{project.display_name} / Sin tarea principal"
-                            ),
+                            "label": label,
                             "expense": defaultdict(float),
                         }
                     expense_detail_by_task[detail_key]["expense"][period_key] += expense_amount
@@ -311,6 +330,27 @@ class ProjectCashFlowWizard(models.TransientModel):
                 total_expense[key] += expense
             lines.append(line_vals)
 
+        income_task_lines = []
+        for detail in sorted(
+            income_detail_by_task.values(),
+            key=lambda item: (
+                item["project"].display_name or "",
+                item["task"].display_name if item["task"] else "",
+            ),
+        ):
+            vals = {
+                "label": detail["label"],
+                "project": detail["project"],
+                "task": detail["task"],
+                "income": {},
+                "total": 0.0,
+            }
+            for period in periods:
+                amount = detail["income"].get(period["key"], 0.0)
+                vals["income"][period["key"]] = amount
+                vals["total"] += amount
+            income_task_lines.append(vals)
+
         expense_task_lines = []
         for detail in sorted(
             expense_detail_by_task.values(),
@@ -332,6 +372,43 @@ class ProjectCashFlowWizard(models.TransientModel):
                 vals["total"] += amount
             expense_task_lines.append(vals)
 
+        profit_task_lines = []
+        for detail_key in set(income_detail_by_task) | set(expense_detail_by_task):
+            income_detail = income_detail_by_task.get(detail_key)
+            expense_detail = expense_detail_by_task.get(detail_key)
+            detail = income_detail or expense_detail
+            vals = {
+                "label": detail["label"],
+                "project": detail["project"],
+                "task": detail["task"],
+                "income": {},
+                "expense": {},
+                "profit": {},
+                "total_profit": 0.0,
+            }
+            for period in periods:
+                key = period["key"]
+                income = (
+                    income_detail["income"].get(key, 0.0) if income_detail else 0.0
+                )
+                expense = (
+                    expense_detail["expense"].get(key, 0.0) if expense_detail else 0.0
+                )
+                profit = income - expense
+                vals["income"][key] = income
+                vals["expense"][key] = expense
+                vals["profit"][key] = profit
+                vals["total_profit"] += profit
+            profit_task_lines.append(vals)
+
+        profit_task_lines.sort(
+            key=lambda item: (
+                item["project"].display_name or "",
+                -(item["total_profit"] or 0.0),
+                item["task"].display_name if item["task"] else "",
+            )
+        )
+
         totals = {"income": {}, "expense": {}, "net": {}, "accumulated": {}}
         running_total = 0.0
         for period in periods:
@@ -348,7 +425,9 @@ class ProjectCashFlowWizard(models.TransientModel):
         return {
             "periods": periods,
             "lines": lines,
+            "income_task_lines": income_task_lines,
             "expense_task_lines": expense_task_lines,
+            "profit_task_lines": profit_task_lines,
             "totals": totals,
             "currency": self.company_id.currency_id,
             "date_from": self.date_from,

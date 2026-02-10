@@ -63,7 +63,25 @@
                             <tr><td colspan="99" style="height: 6px; background-color: #ffffff; border: none;"></td></tr>
 
                             <tr style="background-color: #f4efb2; font-weight: bold;">
-                                <td colspan="99">2. Detalle de Egresos</td>
+                                <td colspan="99">2. Detalle de Ingresos por Tarea</td>
+                            </tr>
+                            <t t-foreach="data['income_task_lines']" t-as="line">
+                                <tr>
+                                    <td>
+                                        <span t-esc="line['label']"/>
+                                    </td>
+                                    <t t-foreach="data['periods']" t-as="period">
+                                        <td class="text-end">
+                                            <span t-out="line['income'][period['key']]" t-options="{'widget': 'monetary', 'display_currency': data['currency']}"/>
+                                        </td>
+                                    </t>
+                                </tr>
+                            </t>
+
+                            <tr><td colspan="99" style="height: 6px; background-color: #ffffff; border: none;"></td></tr>
+
+                            <tr style="background-color: #f4efb2; font-weight: bold;">
+                                <td colspan="99">3. Detalle de Egresos</td>
                             </tr>
                             <t t-foreach="data['expense_task_lines']" t-as="line">
                                 <tr>
@@ -88,8 +106,26 @@
 
                             <tr><td colspan="99" style="height: 6px; background-color: #ffffff; border: none;"></td></tr>
 
+                            <tr style="background-color: #f7d8b5; font-weight: bold;">
+                                <td colspan="99">4. Ganancia por Tarea (Ingreso - Egreso)</td>
+                            </tr>
+                            <t t-foreach="data['profit_task_lines']" t-as="line">
+                                <tr>
+                                    <td>
+                                        <span t-esc="line['label']"/>
+                                    </td>
+                                    <t t-foreach="data['periods']" t-as="period">
+                                        <td class="text-end">
+                                            <span t-out="line['profit'][period['key']]" t-options="{'widget': 'monetary', 'display_currency': data['currency']}"/>
+                                        </td>
+                                    </t>
+                                </tr>
+                            </t>
+
+                            <tr><td colspan="99" style="height: 6px; background-color: #ffffff; border: none;"></td></tr>
+
                             <tr style="background-color: #b9deef; font-weight: bold; border-top: 1px solid #888;">
-                                <td>3.0 Saldo Neto</td>
+                                <td>5.0 Saldo Neto</td>
                                 <t t-foreach="data['periods']" t-as="period">
                                     <td class="text-end">
                                         <span t-out="data['totals']['net'][period['key']]" t-options="{'widget': 'monetary', 'display_currency': data['currency']}"/>
@@ -97,7 +133,7 @@
                                 </t>
                             </tr>
                             <tr style="background-color: #b9deef; font-weight: bold;">
-                                <td>4.0 Saldo Acumulado</td>
+                                <td>6.0 Saldo Acumulado</td>
                                 <t t-foreach="data['periods']" t-as="period">
                                     <td class="text-end">
                                         <span t-out="data['totals']['accumulated'][period['key']]" t-options="{'widget': 'monetary', 'display_currency': data['currency']}"/>
