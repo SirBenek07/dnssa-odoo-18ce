@@ -19,7 +19,7 @@
               <field name="uom_id" readonly="1" invisible="resource_type != 'tool'"/>
               <field name="date_from"/>
               <field name="date_to"/>
-              <field name="picking_type_id" invisible="resource_type != 'tool'"/>
+              <field name="picking_type_id" column_invisible="1"/>
               <field name="state" readonly="1"/>
               <field name="picking_out_id" readonly="1" invisible="resource_type != 'tool'"/>
               <field name="picking_in_id" readonly="1" invisible="resource_type != 'tool'"/>

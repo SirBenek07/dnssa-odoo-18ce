@@ -3,6 +3,7 @@ from datetime import datetime, time
 
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.tools.float_utils import float_compare
 
 
 class ProjectTaskToolLine(models.Model):
@@ -35,6 +36,23 @@ class ProjectTaskToolLine(models.Model):
             return fields.Date.to_date(task.planned_date_start)
         return fields.Date.context_today(self)
 
+    @api.model
+    def _get_task_from_vals(self, vals):
+        task_id = vals.get("task_id") or self.env.context.get("default_task_id")
+        if not task_id:
+            return self.env["project.task"]
+        return self.env["project.task"].browse(task_id).exists()
+
+    @api.model
+    def _get_project_default_picking_type(self, task):
+        if not task:
+            return False
+        if "picking_type_id" in task._fields and task.picking_type_id:
+            return task.picking_type_id
+        if task.project_id and "picking_type_id" in task.project_id._fields and task.project_id.picking_type_id:
+            return task.project_id.picking_type_id
+        return False
+
     task_id = fields.Many2one("project.task", required=True, ondelete="cascade")
     company_id = fields.Many2one(related="task_id.company_id", store=True, readonly=True)
     resource_type = fields.Selection(
@@ -63,10 +81,11 @@ class ProjectTaskToolLine(models.Model):
     )
     picking_out_id = fields.Many2one("stock.picking", readonly=True, string="Transferencia entrega")
     picking_in_id = fields.Many2one("stock.picking", readonly=True, string="Transferencia devolucion")
+    reservation_move_id = fields.Many2one("stock.move", readonly=True, copy=False, string="Movimiento reserva")
     picking_type_id = fields.Many2one(
         "stock.picking.type",
         string="Tipo de operacion",
-        domain="[('code', '=', 'internal'), ('company_id', '=', company_id)]",
+        domain="[('code', '=', 'internal')]",
     )
     location_src_id = fields.Many2one(
         "stock.location", string="Desde", help="Ubicacion origen (Herramientas/Deposito)"
@@ -158,17 +177,62 @@ class ProjectTaskToolLine(models.Model):
                         ("product_id", "=", line.product_id.id),
                     ]
                 )
-            conflict = self.search(domain, limit=1)
-            if conflict:
-                raise UserError(
-                    _(
-                        "El recurso %(resource)s ya esta reservado del %(start)s al %(end)s (tarea %(task)s).",
-                        resource=conflict.resource_name,
-                        start=fields.Date.to_string(conflict.date_from),
-                        end=fields.Date.to_string(conflict.date_to),
-                        task=conflict.task_id.display_name,
+            if line.resource_type == "vehicle":
+                conflict = self.search(domain, limit=1)
+                if conflict:
+                    raise UserError(
+                        _(
+                            "El recurso %(resource)s ya esta reservado del %(start)s al %(end)s (tarea %(task)s).",
+                            resource=conflict.resource_name,
+                            start=fields.Date.to_string(conflict.date_from),
+                            end=fields.Date.to_string(conflict.date_to),
+                            task=conflict.task_id.display_name,
+                        )
                     )
-                )
+                continue
+
+            # Para herramientas no bloqueamos en borrador: solo advertimos en onchange.
+            # El bloqueo real ocurre al entregar por validacion de stock.
+            if line.resource_type == "tool":
+                continue
+
+    @api.onchange("resource_type", "product_id", "qty", "date_from", "date_to", "state")
+    def _onchange_tool_overbooking_warning(self):
+        for line in self:
+            if (
+                line.resource_type != "tool"
+                or not line.product_id
+                or not line.date_from
+                or not line.date_to
+                or line.state != "draft"
+            ):
+                continue
+            domain = [
+                ("id", "!=", line.id),
+                ("resource_type", "=", "tool"),
+                ("product_id", "=", line.product_id.id),
+                ("state", "=", "draft"),
+                ("date_from", "<=", line.date_to),
+                ("date_to", ">=", line.date_from),
+            ]
+            overlapping_draft_qty = sum(self.search(domain).mapped("qty"))
+            available_qty = line.product_id.with_company(line.company_id).qty_available
+            requested_total = overlapping_draft_qty + line.qty
+            rounding = line.uom_id.rounding if line.uom_id else 0.01
+            if float_compare(requested_total, available_qty, precision_rounding=rounding) > 0:
+                return {
+                    "warning": {
+                        "title": _("Advertencia de stock"),
+                        "message": _(
+                            "La reserva supera el disponible para %(tool)s.\n"
+                            "Disponible: %(available).2f | Ya reservado en borrador: %(reserved).2f | Solicitado: %(requested).2f",
+                            tool=line.product_id.display_name,
+                            available=available_qty,
+                            reserved=overlapping_draft_qty,
+                            requested=line.qty,
+                        ),
+                    }
+                }
 
     def _ensure_locations(self):
         for line in self:
@@ -191,10 +255,16 @@ class ProjectTaskToolLine(models.Model):
                 vals.pop("product_id", None)
             elif vals.get("resource_type") == "tool":
                 vals.pop("vehicle_id", None)
+                if not vals.get("picking_type_id"):
+                    task = self._get_task_from_vals(vals)
+                    default_picking_type = self._get_project_default_picking_type(task)
+                    if default_picking_type:
+                        vals["picking_type_id"] = default_picking_type.id
             self._set_locations_in_vals(vals)
         records = super().create(vals_list)
         records._ensure_stage_allows_edit()
         records._assign_locations_from_type(force=True)
+        records._sync_reservation_moves()
         return records
 
     def write(self, vals):
@@ -222,6 +292,10 @@ class ProjectTaskToolLine(models.Model):
         if "product_id" in write_vals and write_vals.get("product_id"):
             write_vals["vehicle_id"] = False
             write_vals.setdefault("resource_type", "tool")
+            if not write_vals.get("picking_type_id") and len(self) == 1:
+                default_picking_type = self._get_project_default_picking_type(self.task_id)
+                if default_picking_type:
+                    write_vals["picking_type_id"] = default_picking_type.id
 
         res = super().write(write_vals)
         force_locations = "picking_type_id" in write_vals
@@ -233,10 +307,13 @@ class ProjectTaskToolLine(models.Model):
             )
             if missing:
                 missing._assign_locations_from_type()
+        if not self.env.context.get("tool_line_skip_reservation_sync"):
+            self._sync_reservation_moves()
         return res
 
     def unlink(self):
         self._ensure_stage_allows_edit()
+        self._sync_reservation_moves(remove_only=True)
         return super().unlink()
 
     def action_entregar(self):
@@ -245,6 +322,7 @@ class ProjectTaskToolLine(models.Model):
             if line.state != "draft":
                 raise UserError(_("Solo lineas en borrador."))
             if line.resource_type == "tool":
+                line._sync_reservation_moves(remove_only=True)
                 line._assign_locations_from_type()
                 line._ensure_locations()
                 picking = line._make_internal_picking(
@@ -358,6 +436,54 @@ class ProjectTaskToolLine(models.Model):
             vals["location_src_id"] = picking_type.default_location_src_id.id
         if picking_type.default_location_dest_id and not vals.get("location_dst_id"):
             vals["location_dst_id"] = picking_type.default_location_dest_id.id
+
+    def _sync_reservation_moves(self, remove_only=False):
+        Move = self.env["stock.move"].sudo()
+        for line in self:
+            if remove_only or line.resource_type != "tool" or line.state != "draft":
+                line._remove_reservation_move()
+                continue
+
+            line._assign_locations_from_type()
+            if not (line.location_src_id and line.location_dst_id and line.product_id and line.uom_id):
+                line._remove_reservation_move()
+                continue
+
+            move_vals = {
+                "name": _("Reserva %(tool)s para %(task)s", tool=line.product_id.display_name, task=line.task_id.display_name),
+                "origin": _("Reserva tarea %(task)s", task=line.task_id.display_name),
+                "product_id": line.product_id.id,
+                "product_uom": line.uom_id.id,
+                "product_uom_qty": line.qty,
+                "location_id": line.location_src_id.id,
+                "location_dest_id": line.location_dst_id.id,
+                "company_id": line.company_id.id or self.env.company.id,
+                "date": datetime.combine(line.date_from, time.min) if line.date_from else fields.Datetime.now(),
+            }
+
+            move = line.reservation_move_id
+            if move and move.state in ("done", "cancel"):
+                move = Move
+                line.with_context(tool_line_skip_reservation_sync=True).write({"reservation_move_id": False})
+
+            if move:
+                move.sudo().write(move_vals)
+                if move.state == "draft":
+                    move.sudo()._action_confirm()
+            else:
+                move = Move.create(move_vals)
+                move.sudo()._action_confirm()
+                line.with_context(tool_line_skip_reservation_sync=True).write({"reservation_move_id": move.id})
+
+    def _remove_reservation_move(self):
+        for line in self:
+            move = line.reservation_move_id
+            if not move:
+                continue
+            if move.state not in ("done", "cancel"):
+                move.sudo()._action_cancel()
+            move.sudo().unlink()
+            line.with_context(tool_line_skip_reservation_sync=True).write({"reservation_move_id": False})
 
 
 class ProjectTask(models.Model):
