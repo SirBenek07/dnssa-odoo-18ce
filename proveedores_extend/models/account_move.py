@@ -5,8 +5,8 @@ from odoo.exceptions import ValidationError
 class AccountMove(models.Model):
     _inherit = "account.move"
 
-    timbrado = fields.Char(string="Timbrado", required="True")
-    validez_timbrado = fields.Date(string="Validez de timbrado", required="True")
+    timbrado = fields.Char(string="Timbrado")
+    validez_timbrado = fields.Date(string="Validez de timbrado")
 
     @api.constrains("validez_timbrado", "invoice_date", "move_type")
     def _check_validez_timbrado_after_invoice_date(self):
