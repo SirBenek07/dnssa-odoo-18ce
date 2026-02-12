@@ -4,7 +4,7 @@
     "summary": "Sync assigned project tasks to each user's calendar events",
     "version": "18.0.1.0.0",
     "category": "Project",
-    "author": "Criterium",
+    "author": "Federico Fernandez",
     "license": "LGPL-3",
     "depends": ["project", "calendar", "google_calendar"],
     "data": [],
