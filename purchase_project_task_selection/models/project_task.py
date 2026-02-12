@@ -1,8 +1,15 @@
-from odoo import _, fields, models
+from odoo import _, api, fields, models
 
 
 class ProjectTask(models.Model):
     _inherit = "project.task"
+
+    is_template_project = fields.Boolean(
+        string="Proyecto plantilla",
+        compute="_compute_is_template_project",
+        store=True,
+        index=True,
+    )
 
     purchase_line_ids = fields.One2many(
         comodel_name="purchase.order.line",
@@ -22,6 +29,18 @@ class ProjectTask(models.Model):
         string="Gastos",
         compute="_compute_expense_count",
     )
+
+    @api.depends("project_id", "project_id.name", "project_id.write_date")
+    def _compute_is_template_project(self):
+        for task in self:
+            project = task.project_id
+            is_template = False
+            if project:
+                if "is_template" in project._fields:
+                    is_template = bool(project.is_template)
+                else:
+                    is_template = "(TEMPLATE)" in (project.name or "").upper()
+            task.is_template_project = is_template
 
     def _compute_purchase_line_count(self):
         for task in self:

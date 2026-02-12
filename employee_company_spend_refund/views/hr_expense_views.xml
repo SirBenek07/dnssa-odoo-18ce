@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_expense_view_form_company_spend_refund" model="ir.ui.view">
+        <field name="name">hr.expense.form.company.spend.refund</field>
+        <field name="model">hr.expense</field>
+        <field name="inherit_id" ref="hr_expense.hr_expense_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@id='payment_mode']" position="after">
+                <field
+                    name="is_company_spend_refund"
+                    readonly="sheet_id"
+                    invisible="payment_mode != 'own_account'"
+                />
+            </xpath>
+
+            <xpath expr="//label[@for='product_id']" position="attributes">
+                <attribute name="invisible">is_company_spend_refund</attribute>
+            </xpath>
+
+            <xpath expr="//label[@for='product_id']/following-sibling::div[1]" position="attributes">
+                <attribute name="invisible">is_company_spend_refund</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='product_id']" position="attributes">
+                <attribute name="invisible">is_company_spend_refund</attribute>
+                <attribute name="required">not is_company_spend_refund</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='product_uom_id']" position="attributes">
+                <attribute name="required">not is_company_spend_refund and product_has_cost</attribute>
+                <attribute name="invisible">is_company_spend_refund or not product_has_cost</attribute>
+            </xpath>
+
+            <xpath expr="//label[@for='tax_ids']" position="attributes">
+                <attribute name="invisible">is_company_spend_refund</attribute>
+            </xpath>
+
+            <xpath expr="//label[@for='tax_ids']/following-sibling::div[1]" position="attributes">
+                <attribute name="invisible">is_company_spend_refund</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='tax_ids']" position="attributes">
+                <attribute name="invisible">is_company_spend_refund</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='vendor_id']" position="attributes">
+                <attribute name="invisible">payment_mode != 'company_account' or is_company_spend_refund</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='vendor_id']" position="after">
+                <field
+                    name="company_vendor_bill_id"
+                    readonly="sheet_id"
+                    invisible="not is_company_spend_refund"
+                    required="is_company_spend_refund"
+                />
+                <field name="company_reclass_move_id" readonly="1" invisible="not company_reclass_move_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="hr_expense_sheet_view_form_company_spend_refund" model="ir.ui.view">
+        <field name="name">hr.expense.sheet.form.company.spend.refund</field>
+        <field name="model">hr.expense.sheet</field>
+        <field name="inherit_id" ref="hr_expense.view_hr_expense_sheet_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='expense_line_ids']/list/field[@name='vendor_id']" position="attributes">
+                <attribute name="column_invisible">parent.payment_mode != 'company_account'</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='expense_line_ids']/list/field[@name='vendor_id']" position="after">
+                <field name="company_vendor_bill_id" optional="show"/>
+                <field name="is_company_spend_refund" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

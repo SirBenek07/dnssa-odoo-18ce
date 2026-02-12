@@ -15,6 +15,7 @@ class PurchaseOrderLine(models.Model):
         comodel_name="project.task",
         string="Tarea",
         help="Tarea relacionada con esta linea de compra.",
+        domain="[('parent_id', '=', False), ('is_template_project', '=', False), ('is_task_template', '=', False)]",
     )
 
     @api.onchange("order_id")
@@ -30,6 +31,10 @@ class PurchaseOrderLine(models.Model):
                 line.project_id = line.task_id.project_id
             elif line.task_id and line.project_id != line.task_id.project_id:
                 line.project_id = line.task_id.project_id
+            if line.task_id and line.task_id.is_template_project:
+                line.task_id = False
+            if line.task_id and "is_task_template" in line.task_id._fields and line.task_id.is_task_template:
+                line.task_id = False
 
     @api.onchange("project_id")
     def _onchange_project_id_clear_task_if_mismatch(self):
@@ -74,6 +79,18 @@ class PurchaseOrderLine(models.Model):
                     _(
                         "Solo se pueden seleccionar tareas padre en la linea de compra."
                     )
+                )
+            if line.task_id and line.task_id.is_template_project:
+                raise ValidationError(
+                    _("No se pueden seleccionar tareas de proyectos plantilla.")
+                )
+            if (
+                line.task_id
+                and "is_task_template" in line.task_id._fields
+                and line.task_id.is_task_template
+            ):
+                raise ValidationError(
+                    _("No se pueden seleccionar tareas marcadas como plantilla.")
                 )
 
     @api.model_create_multi
