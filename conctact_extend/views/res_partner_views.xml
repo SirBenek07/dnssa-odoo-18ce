@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_res_partner_filter_inherit_conctact_extend" model="ir.ui.view">
+        <field name="name">res.partner.search.inherit.conctact.extend</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search/separator[1]" position="before">
+                <field name="city" filter_domain="[('city', 'ilike', self)]"/>
+                <field name="state_id" string="Departamento"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
