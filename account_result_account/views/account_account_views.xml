@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_account_form_result_account" model="ir.ui.view">
+        <field name="name">account.account.form.result.account</field>
+        <field name="model">account.account</field>
+        <field name="inherit_id" ref="account.view_account_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Resultado" name="result_account_page">
+                    <group>
+                        <field name="is_result_account"/>
+                    </group>
+                    <field
+                        name="result_range_ids"
+                        context="{'default_account_id': id}"
+                        invisible="not is_result_account"
+                    >
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="sign"/>
+                            <field name="code_from"/>
+                            <field name="code_to"/>
+                        </list>
+                        <form>
+                            <group>
+                                <field name="sign"/>
+                                <field name="code_from"/>
+                                <field name="code_to"/>
+                            </group>
+                        </form>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
