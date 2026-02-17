@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_balance_general" model="ir.actions.report">
+        <field name="name">Balance General</field>
+        <field name="model">balance.general.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">reportes_financieros.balance_general_pdf</field>
+        <field name="report_file">reportes_financieros.balance_general_pdf</field>
+        <field name="paperformat_id" ref="reportes_financieros.paperformat_balance_general_a4" />
+    </record>
+</odoo>

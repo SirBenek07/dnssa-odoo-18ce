@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="balance_general_pdf">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.basic_layout">
+                    <div class="page">
+                        <h3 style="text-align: center; margin-bottom: 0; font-size: 16px;">BALANCE GENERAL (<t t-out="company.name" />)</h3>
+                        <h5 style="text-align: center; margin-top: 4px; margin-bottom: 14px; font-size: 12px;">(Periodo: <t t-out="period_label" />)</h5>
+
+                        <style>
+                            .rf-row {
+                                width: 100%;
+                                font-size: 0;
+                                white-space: nowrap;
+                            }
+                            .rf-col {
+                                display: inline-block;
+                                vertical-align: top;
+                                font-size: 10px;
+                                box-sizing: border-box;
+                                padding: 1px 2px;
+                                white-space: normal;
+                            }
+                            .rf-code {
+                                width: 16%;
+                            }
+                            .rf-name {
+                                width: 60%;
+                            }
+                            .rf-balance {
+                                width: 24%;
+                                text-align: right;
+                            }
+                        </style>
+
+                        <div style="font-size: 10px; width: 100%;">
+                            <div class="rf-row" style="font-weight: 700; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 6px;">
+                                <div class="rf-col rf-code">Cuenta</div>
+                                <div class="rf-col rf-name">Descripcion</div>
+                                <div class="rf-col rf-balance">Saldo</div>
+                            </div>
+                            <t t-set="prev_top_prefix" t-value="False" />
+                            <t t-foreach="lines" t-as="line">
+                                <t t-set="current_top_prefix" t-value="(line.get('code') or '').split('.')[0]" />
+                                <t t-if="prev_top_prefix and current_top_prefix and current_top_prefix != prev_top_prefix">
+                                    <div style="height: 6px;" />
+                                </t>
+                                <t t-if="line['line_type'] == 'group' and line['is_top_level']">
+                                    <div class="rf-row" style="border: 2px solid #000; padding: 3px 6px; margin-top: 8px; font-weight: 900;">
+                                        <div class="rf-col rf-code" style="font-size: 14px; font-weight: 900;"><t t-out="line['code']" /></div>
+                                        <div class="rf-col rf-name" t-att-style="'font-size: 14px; font-weight: 900; text-transform: uppercase; padding-left: %spx;' % (line['level'] * 5)"><t t-out="line['name']" /></div>
+                                        <div class="rf-col rf-balance" style="font-size: 14px; font-weight: 900;">
+                                            <span t-out="line['display_balance']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                        </div>
+                                    </div>
+                                </t>
+                                <t t-if="not (line['line_type'] == 'group' and line['is_top_level'])">
+                                    <div class="rf-row" t-att-style="'padding: 1px 2px; ' + ('font-weight: 700;' if line['line_type'] == 'group' else '')">
+                                        <div class="rf-col rf-code"><t t-out="line['code']" /></div>
+                                        <div class="rf-col rf-name" t-att-style="'padding-left: %spx;' % (line['level'] * 5)"><t t-out="line['name']" /></div>
+                                        <div class="rf-col rf-balance">
+                                            <span t-out="line['display_balance']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                        </div>
+                                    </div>
+                                </t>
+                                <t t-set="prev_top_prefix" t-value="current_top_prefix" />
+                            </t>
+
+                            <div style="margin-top: 18px; margin-left: auto; margin-right: auto; width: 52%; border: 1px solid #000; padding: 6px 8px;">
+                                <div style="font-weight: 700; font-size: 11px; margin-bottom: 6px; text-align: center;">RESUMEN DE BALANCE GENERAL</div>
+
+                                <div class="rf-row" style="padding: 0;">
+                                    <div class="rf-col rf-name" style="width: 76%;">Total Activo</div>
+                                    <div class="rf-col rf-balance">
+                                        <span t-out="summary['total_activo']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                    </div>
+                                </div>
+                                <div class="rf-row" style="padding: 0;">
+                                    <div class="rf-col rf-name" style="width: 76%;">Total Pasivo</div>
+                                    <div class="rf-col rf-balance">
+                                        <span t-out="summary['total_pasivo']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                    </div>
+                                </div>
+                                <div class="rf-row" style="padding: 0;">
+                                    <div class="rf-col rf-name" style="width: 76%;">Total Patrimonio Neto</div>
+                                    <div class="rf-col rf-balance">
+                                        <span t-out="summary['total_patrimonio_neto']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                    </div>
+                                </div>
+
+                                <div style="height: 6px;" />
+
+                                <div class="rf-row" style="padding: 0;">
+                                    <div class="rf-col rf-name" style="width: 76%;">Total Ingreso</div>
+                                    <div class="rf-col rf-balance">
+                                        <span t-out="summary['total_ingreso']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                    </div>
+                                </div>
+                                <div class="rf-row" style="padding: 0;">
+                                    <div class="rf-col rf-name" style="width: 76%;">Total Egreso</div>
+                                    <div class="rf-col rf-balance">
+                                        <span t-out="summary['total_egreso']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                    </div>
+                                </div>
+                                <div class="rf-row" style="padding: 0; font-weight: 700; border-top: 1px solid #000; margin-top: 3px; padding-top: 3px;">
+                                    <div class="rf-col rf-name" style="width: 76%;">Resultado</div>
+                                    <div class="rf-col rf-balance">
+                                        <span t-out="summary['resultado']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
