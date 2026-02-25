@@ -19,6 +19,7 @@
                     <field name="date_from" />
                     <field name="date_to" />
                     <field name="show_accounts_without_moves" />
+                    <field name="show_debit_credit_columns" />
                 </group>
                 <footer>
                     <button

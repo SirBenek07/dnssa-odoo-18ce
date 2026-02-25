@@ -1,0 +1,274 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="hr_contract_view_form_payroll_paraguay" model="ir.ui.view">
+        <field name="name">hr.contract.view.form.payroll.paraguay</field>
+        <field name="model">hr.contract</field>
+        <field name="inherit_id" ref="hr_contract.hr_contract_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='struct_id']" position="attributes">
+                <attribute name="domain">[('py_is_template', '=', False)]</attribute>
+            </xpath>
+            <xpath expr="//group[@name='top_info_right']" position="after">
+                <group string="Payroll Paraguay">
+                    <field name="py_payment_scheme" />
+                    <field
+                        name="py_vendor_partner_id"
+                        invisible="py_payment_scheme != 'factura_proveedor'"
+                    />
+                    <field
+                        name="py_vendor_product_id"
+                        invisible="py_payment_scheme != 'factura_proveedor'"
+                    />
+                    <field
+                        name="py_vendor_journal_id"
+                        invisible="py_payment_scheme != 'factura_proveedor'"
+                    />
+                    <field
+                        name="py_vendor_payable_account_id"
+                        invisible="py_payment_scheme != 'factura_proveedor'"
+                    />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="res_config_settings_view_form_payroll_paraguay" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.payroll.paraguay</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app
+                    string="Payroll Paraguay"
+                    name="payroll_paraguay"
+                    groups="payroll.group_payroll_manager"
+                >
+                    <block title="Paraguay" id="payroll_paraguay_defaults">
+                        <setting
+                            string="Producto por defecto para facturas de proveedor"
+                            help="Se usa para contratos con esquema Factura de Proveedor cuando no se especifica un producto en el contrato."
+                        >
+                            <field name="py_default_vendor_product_id" />
+                        </setting>
+                        <setting
+                            string="Diario por defecto para facturas de proveedor"
+                            help="Se usa para contratos con esquema Factura de Proveedor cuando no se especifica un diario en el contrato."
+                        >
+                            <field name="py_default_vendor_journal_id" />
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="hr_payslip_view_form_payroll_paraguay" model="ir.ui.view">
+        <field name="name">hr.payslip.view.form.payroll.paraguay</field>
+        <field name="model">hr.payslip</field>
+        <field name="inherit_id" ref="payroll_account.hr_payslip_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_open_payroll_payment"
+                    type="object"
+                    string="Pagar nomina"
+                    class="oe_highlight"
+                    invisible="state != 'done' or py_payment_state == 'paid'"
+                />
+            </xpath>
+            <xpath expr="//group[@name='accounting']" position="inside">
+                <field name="py_payment_scheme" />
+                <field name="py_amount_to_pay" />
+                <field name="py_amount_paid" />
+                <field name="py_amount_due" />
+                <field name="py_payment_state" />
+                <field
+                    name="vendor_bill_id"
+                    invisible="py_payment_scheme != 'factura_proveedor'"
+                />
+                <field
+                    name="py_provision_move_id"
+                    invisible="py_payment_scheme != 'factura_proveedor'"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="hr_payroll_structure_view_tree_payroll_paraguay" model="ir.ui.view">
+        <field name="name">hr.payroll.structure.tree.payroll.paraguay</field>
+        <field name="model">hr.payroll.structure</field>
+        <field name="inherit_id" ref="payroll.hr_payroll_structure_view_tree" />
+        <field name="arch" type="xml">
+            <field name="code" position="after">
+                <field name="py_is_template" optional="show" />
+            </field>
+        </field>
+    </record>
+
+    <record id="hr_payroll_structure_view_search_payroll_paraguay" model="ir.ui.view">
+        <field name="name">hr.payroll.structure.search.payroll.paraguay</field>
+        <field name="model">hr.payroll.structure</field>
+        <field name="inherit_id" ref="payroll.hr_payroll_structure_view_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <filter
+                    name="py_filter_operativas"
+                    string="Operativas"
+                    domain="[('py_is_template', '=', False)]"
+                />
+                <filter
+                    name="py_filter_templates"
+                    string="Plantillas PY"
+                    domain="[('py_is_template', '=', True)]"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="hr_salary_rule_view_search_payroll_paraguay" model="ir.ui.view">
+        <field name="name">hr.salary.rule.search.payroll.paraguay</field>
+        <field name="model">hr.salary.rule</field>
+        <field name="inherit_id" ref="payroll.hr_salary_rule_view_search" />
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <filter
+                    name="py_filter_rule_operativas"
+                    string="Operativas"
+                    domain="[('code', 'not ilike', 'TPL_')]"
+                />
+                <filter
+                    name="py_filter_rule_templates"
+                    string="Plantillas (TPL)"
+                    domain="[('code', 'ilike', 'TPL_')]"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="hr_payroll_structure_view_form_payroll_paraguay" model="ir.ui.view">
+        <field name="name">hr.payroll.structure.form.payroll.paraguay</field>
+        <field name="model">hr.payroll.structure</field>
+        <field name="inherit_id" ref="payroll.hr_payroll_structure_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <div class="oe_button_box" name="button_box">
+                    <button
+                        name="action_py_clone_template_rules_replace"
+                        type="object"
+                        string="Clonar reglas plantilla y reemplazar"
+                        class="oe_highlight"
+                        confirm="Esto clonara las reglas TPL_* de esta estructura, generara copias con nuevos codigos y reemplazara las reglas plantilla en esta estructura. Continuar?"
+                    />
+                </div>
+            </xpath>
+            <xpath expr="//group[@col='2']" position="inside">
+                <field name="py_is_template" />
+                <field name="py_clone_prefix" placeholder="IPS_ADM, IPS_COM, FACT_ADM..." />
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_payroll_py_templates" model="ir.actions.act_window">
+        <field name="name">Plantillas PY</field>
+        <field name="res_model">hr.payroll.structure</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('py_is_template', '=', True)]</field>
+    </record>
+
+    <menuitem
+        id="menu_payroll_py_templates"
+        name="Plantillas PY"
+        parent="payroll.payroll_menu_configuration"
+        action="payroll_paraguay.action_payroll_py_templates"
+        sequence="3"
+        groups="payroll.group_payroll_manager"
+    />
+
+    <record id="payroll.hr_payroll_structure_action" model="ir.actions.act_window">
+        <field name="context">{'search_default_py_filter_operativas': 1}</field>
+    </record>
+
+    <record id="payroll.action_salary_rule_form" model="ir.actions.act_window">
+        <field name="context">{'search_default_py_filter_rule_operativas': 1}</field>
+    </record>
+
+    <record id="view_hr_payslip_payments_tree" model="ir.ui.view">
+        <field name="name">hr.payslip.payments.tree</field>
+        <field name="model">hr.payslip</field>
+        <field name="arch" type="xml">
+            <list create="false" sample="1">
+                <field name="number" />
+                <field name="employee_id" />
+                <field name="date_from" />
+                <field name="date_to" />
+                <field name="py_payment_scheme" />
+                <field name="py_amount_to_pay" />
+                <field name="py_amount_paid" />
+                <field name="py_amount_due" />
+                <field name="py_payment_state" />
+                <field name="vendor_bill_id" optional="show" />
+                <field name="state" />
+            </list>
+        </field>
+    </record>
+
+    <record id="view_hr_payslip_payments_search" model="ir.ui.view">
+        <field name="name">hr.payslip.payments.search</field>
+        <field name="model">hr.payslip</field>
+        <field name="arch" type="xml">
+            <search string="Buscar pagos de nomina">
+                <field name="employee_id" />
+                <field name="number" />
+                <field name="py_payment_scheme" />
+                <field name="date_to" />
+                <filter
+                    name="filter_pending"
+                    string="Pendientes"
+                    domain="[('state', '=', 'done'), ('py_payment_state', 'in', ('pending', 'partial'))]"
+                />
+                <filter
+                    name="filter_paid"
+                    string="Pagadas"
+                    domain="[('state', '=', 'done'), ('py_payment_state', '=', 'paid')]"
+                />
+                <group expand="0" string="Agrupar por">
+                    <filter
+                        string="Empleado"
+                        name="group_by_employee"
+                        context="{'group_by':'employee_id'}"
+                    />
+                    <filter
+                        string="Esquema"
+                        name="group_by_scheme"
+                        context="{'group_by':'py_payment_scheme'}"
+                    />
+                    <filter
+                        string="Estado de pago"
+                        name="group_by_payment_state"
+                        context="{'group_by':'py_payment_state'}"
+                    />
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_payroll_payments" model="ir.actions.act_window">
+        <field name="name">Pagar nominas</field>
+        <field name="res_model">hr.payslip</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="payroll_paraguay.view_hr_payslip_payments_tree" />
+        <field name="search_view_id" ref="payroll_paraguay.view_hr_payslip_payments_search" />
+        <field name="domain">[('state', '=', 'done')]</field>
+        <field name="context">{'search_default_filter_pending': 1}</field>
+    </record>
+
+    <menuitem
+        id="menu_payroll_payments"
+        name="Pagar nominas"
+        parent="payroll.payroll_menu_root"
+        action="payroll_paraguay.action_payroll_payments"
+        sequence="25"
+        groups="payroll.group_payroll_user"
+    />
+</odoo>
+

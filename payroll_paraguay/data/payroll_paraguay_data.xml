@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <data noupdate="1">
+        <!-- Salary rule categories -->
+        <record id="categ_basic" model="hr.salary.rule.category">
+            <field name="name">Basico</field>
+            <field name="code">BASIC</field>
+        </record>
+        <record id="categ_deduction" model="hr.salary.rule.category">
+            <field name="name">Descuentos</field>
+            <field name="code">DED</field>
+        </record>
+        <record id="categ_ips_employee" model="hr.salary.rule.category">
+            <field name="name">Aporte Empleado IPS</field>
+            <field name="code">IPSEMP</field>
+        </record>
+        <record id="categ_company_contrib" model="hr.salary.rule.category">
+            <field name="name">Contribucion Patronal</field>
+            <field name="code">COMP</field>
+        </record>
+        <record id="categ_net" model="hr.salary.rule.category">
+            <field name="name">Neto</field>
+            <field name="code">NET</field>
+        </record>
+        <record id="categ_aguinaldo" model="hr.salary.rule.category">
+            <field name="name">Aguinaldo</field>
+            <field name="code">AGUI</field>
+        </record>
+
+        <!-- Contribution register -->
+        <record id="register_ips" model="hr.contribution.register">
+            <field name="name">IPS</field>
+        </record>
+
+        <!-- TEMPLATE STRUCTURES (recommended starting point) -->
+        <record id="rule_tpl_fact_basic" model="hr.salary.rule">
+            <field name="name">TPL Factura - Monto Base</field>
+            <field name="code">TPL_FACT_BASIC</field>
+            <field name="sequence" eval="100" />
+            <field name="category_id" ref="payroll_paraguay.categ_basic" />
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">result = contract.wage</field>
+        </record>
+        <record id="rule_tpl_fact_net" model="hr.salary.rule">
+            <field name="name">TPL Factura - Neto a Pagar</field>
+            <field name="code">TPL_FACT_NET</field>
+            <field name="sequence" eval="900" />
+            <field name="category_id" ref="payroll_paraguay.categ_net" />
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">result = categories.BASIC - categories.DED</field>
+        </record>
+        <record id="rule_tpl_ips_basic" model="hr.salary.rule">
+            <field name="name">TPL IPS - Basico (91%)</field>
+            <field name="code">TPL_IPS_BASIC</field>
+            <field name="sequence" eval="100" />
+            <field name="category_id" ref="payroll_paraguay.categ_basic" />
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">result = contract.wage * 0.91</field>
+        </record>
+        <record id="rule_tpl_ips_employee" model="hr.salary.rule">
+            <field name="name">TPL IPS - Aporte Empleado (9%)</field>
+            <field name="code">TPL_IPS_EMP_9</field>
+            <field name="sequence" eval="200" />
+            <field name="category_id" ref="payroll_paraguay.categ_ips_employee" />
+            <field name="register_id" ref="payroll_paraguay.register_ips" />
+            <field name="condition_select">none</field>
+            <field name="amount_select">percentage</field>
+            <field name="amount_percentage_base">contract.wage</field>
+            <field name="amount_percentage" eval="9.0" />
+        </record>
+        <record id="rule_tpl_absence_unpaid" model="hr.salary.rule">
+            <field name="name">TPL Ausencia Injustificada (codigo AUS)</field>
+            <field name="code">TPL_AUS_UNP</field>
+            <field name="sequence" eval="250" />
+            <field name="category_id" ref="payroll_paraguay.categ_deduction" />
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">
+dias_aus = abs(worked_days.AUS.number_of_days)
+result = (contract.wage / 30.0) * dias_aus
+            </field>
+        </record>
+        <record id="rule_tpl_ips_employer" model="hr.salary.rule">
+            <field name="name">TPL IPS - Aporte Patronal (16.5%)</field>
+            <field name="code">TPL_IPS_PAT_165</field>
+            <field name="sequence" eval="300" />
+            <field name="category_id" ref="payroll_paraguay.categ_company_contrib" />
+            <field name="register_id" ref="payroll_paraguay.register_ips" />
+            <field name="condition_select">none</field>
+            <field name="amount_select">percentage</field>
+            <field name="amount_percentage_base">contract.wage</field>
+            <field name="amount_percentage" eval="16.5" />
+        </record>
+        <record id="rule_tpl_ips_net" model="hr.salary.rule">
+            <field name="name">TPL IPS - Neto a Pagar</field>
+            <field name="code">TPL_IPS_NET</field>
+            <field name="sequence" eval="900" />
+            <field name="category_id" ref="payroll_paraguay.categ_net" />
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">result = categories.BASIC - categories.DED</field>
+        </record>
+        <record id="rule_tpl_aguinaldo_prov" model="hr.salary.rule">
+            <field name="name">TPL Aguinaldo - Provision Mensual</field>
+            <field name="code">TPL_AGUINALDO_PROV</field>
+            <field name="sequence" eval="850" />
+            <field name="category_id" ref="payroll_paraguay.categ_aguinaldo" />
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">result = contract.wage / 12.0</field>
+        </record>
+        <record id="rule_tpl_aguinaldo" model="hr.salary.rule">
+            <field name="name">TPL Aguinaldo - Pago (contra provision)</field>
+            <field name="code">TPL_AGUINALDO_PAY</field>
+            <field name="sequence" eval="100" />
+            <field name="category_id" ref="payroll_paraguay.categ_aguinaldo" />
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">result = contract.wage / 12.0</field>
+        </record>
+        <record id="rule_tpl_aguinaldo_net" model="hr.salary.rule">
+            <field name="name">TPL Aguinaldo - Neto</field>
+            <field name="code">TPL_AGUINALDO_NET</field>
+            <field name="sequence" eval="900" />
+            <field name="category_id" ref="payroll_paraguay.categ_net" />
+            <field name="condition_select">none</field>
+            <field name="amount_select">code</field>
+            <field name="amount_python_compute">result = categories.AGUI - categories.DED</field>
+        </record>
+        <record id="structure_tpl_factura" model="hr.payroll.structure">
+            <field name="name">Plantilla PY - Factura</field>
+            <field name="code">PY_TPL_FACT</field>
+            <field name="py_is_template" eval="True" />
+            <field
+                name="rule_ids"
+                eval="[(6, 0, [ref('payroll_paraguay.rule_tpl_fact_basic'), ref('payroll_paraguay.rule_tpl_absence_unpaid'), ref('payroll_paraguay.rule_tpl_aguinaldo_prov'), ref('payroll_paraguay.rule_tpl_fact_net')])]"
+            />
+        </record>
+        <record id="structure_tpl_ips" model="hr.payroll.structure">
+            <field name="name">Plantilla PY - Dependiente IPS</field>
+            <field name="code">PY_TPL_IPS</field>
+            <field name="py_is_template" eval="True" />
+            <field
+                name="rule_ids"
+                eval="[(6, 0, [ref('payroll_paraguay.rule_tpl_ips_basic'), ref('payroll_paraguay.rule_tpl_ips_employee'), ref('payroll_paraguay.rule_tpl_absence_unpaid'), ref('payroll_paraguay.rule_tpl_ips_employer'), ref('payroll_paraguay.rule_tpl_aguinaldo_prov'), ref('payroll_paraguay.rule_tpl_ips_net')])]"
+            />
+        </record>
+        <record id="structure_tpl_aguinaldo" model="hr.payroll.structure">
+            <field name="name">Plantilla PY - Pago Aguinaldo (contra provision)</field>
+            <field name="code">PY_TPL_AGUINALDO</field>
+            <field name="py_is_template" eval="True" />
+            <field
+                name="rule_ids"
+                eval="[(6, 0, [ref('payroll_paraguay.rule_tpl_aguinaldo'), ref('payroll_paraguay.rule_tpl_aguinaldo_net')])]"
+            />
+        </record>
+    </data>
+</odoo>

@@ -106,7 +106,7 @@ class BalanceGeneralReport(models.AbstractModel):
 
     def _get_account_balances(self, account_ids, company_id, date_from, date_to):
         if not account_ids:
-            return {}, set()
+            return {}, {}, set()
         domain = [
             ("account_id", "in", account_ids),
             ("company_id", "=", company_id),
@@ -116,19 +116,24 @@ class BalanceGeneralReport(models.AbstractModel):
         ]
         grouped = self.env["account.move.line"].read_group(
             domain=domain,
-            fields=["account_id", "balance:sum"],
+            fields=["account_id", "balance:sum", "debit:sum", "credit:sum"],
             groupby=["account_id"],
             lazy=False,
         )
         balances = {}
+        debit_credit_map = {}
         moved_accounts = set()
         for item in grouped:
             if not item["account_id"]:
                 continue
             account_id = item["account_id"][0]
             balances[account_id] = item.get("balance", 0.0)
+            debit_credit_map[account_id] = {
+                "debit": item.get("debit", 0.0),
+                "credit": item.get("credit", 0.0),
+            }
             moved_accounts.add(account_id)
-        return balances, moved_accounts
+        return balances, debit_credit_map, moved_accounts
 
     def _prepare_lines(self, wizard):
         group_model = self.env["account.group"]
@@ -145,7 +150,7 @@ class BalanceGeneralReport(models.AbstractModel):
             ]
         )
 
-        account_balance_map, moved_accounts = self._get_account_balances(
+        account_balance_map, account_debit_credit_map, moved_accounts = self._get_account_balances(
             accounts.ids,
             wizard.company_id.id,
             wizard.date_from,
@@ -162,13 +167,28 @@ class BalanceGeneralReport(models.AbstractModel):
         lines = []
         for group in groups:
             group_code = group.code_prefix_start or ""
+            group_has_visible_accounts = any(
+                self._code_belongs_to_group(account.code, group_code)
+                for account in visible_accounts
+            )
             group_balance = sum(
                 account_balance_map.get(account.id, 0.0)
                 for account in visible_accounts
                 if self._code_belongs_to_group(account.code, group_code)
             )
+            group_debit = sum(
+                account_debit_credit_map.get(account.id, {}).get("debit", 0.0)
+                for account in visible_accounts
+                if self._code_belongs_to_group(account.code, group_code)
+            )
+            group_credit = sum(
+                account_debit_credit_map.get(account.id, {}).get("credit", 0.0)
+                for account in visible_accounts
+                if self._code_belongs_to_group(account.code, group_code)
+            )
             if (
                 not wizard.show_accounts_without_moves
+                and not group_has_visible_accounts
                 and float_is_zero(group_balance, precision_rounding=currency.rounding)
             ):
                 continue
@@ -181,6 +201,8 @@ class BalanceGeneralReport(models.AbstractModel):
                     "is_top_level": self._is_top_level_group(group_code),
                     "level": group_code.count(".") if group_code else 0,
                     "account_type": False,
+                    "debit": group_debit,
+                    "credit": group_credit,
                 }
             )
 
@@ -201,6 +223,8 @@ class BalanceGeneralReport(models.AbstractModel):
                     "is_top_level": False,
                     "level": account.code.count(".") if account.code else 0,
                     "account_type": account.account_type,
+                    "debit": account_debit_credit_map.get(account.id, {}).get("debit", 0.0),
+                    "credit": account_debit_credit_map.get(account.id, {}).get("credit", 0.0),
                 }
             )
 
@@ -299,6 +323,8 @@ class BalanceGeneralReport(models.AbstractModel):
             else:
                 mult = self._sign_multiplier_for_group_code(line.get("code"))
             line["display_balance"] = line.get("balance", 0.0) * mult
+            line["display_debit"] = line.get("debit", 0.0)
+            line["display_credit"] = line.get("credit", 0.0)
 
     @api.model
     def _get_report_values(self, docids, data=None):
@@ -331,4 +357,5 @@ class BalanceGeneralReport(models.AbstractModel):
             "period_label": period_label,
             "lines": lines,
             "summary": summary,
+            "show_debit_credit_columns": wizard.show_debit_credit_columns,
         }

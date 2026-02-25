@@ -28,6 +28,18 @@
                             .rf-name {
                                 width: 60%;
                             }
+                            .rf-name-dc {
+                                width: 36%;
+                            }
+                            .rf-debit,
+                            .rf-credit {
+                                width: 16%;
+                                text-align: right;
+                            }
+                            .rf-balance-dc {
+                                width: 16%;
+                                text-align: right;
+                            }
                             .rf-balance {
                                 width: 24%;
                                 text-align: right;
@@ -37,8 +49,12 @@
                         <div style="font-size: 10px; width: 100%;">
                             <div class="rf-row" style="font-weight: 700; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 6px;">
                                 <div class="rf-col rf-code">Cuenta</div>
-                                <div class="rf-col rf-name">Descripcion</div>
-                                <div class="rf-col rf-balance">Saldo</div>
+                                <div t-att-class="'rf-col ' + ('rf-name-dc' if show_debit_credit_columns else 'rf-name')">Descripcion</div>
+                                <t t-if="show_debit_credit_columns">
+                                    <div class="rf-col rf-debit">Debito</div>
+                                    <div class="rf-col rf-credit">Credito</div>
+                                </t>
+                                <div t-att-class="'rf-col ' + ('rf-balance-dc' if show_debit_credit_columns else 'rf-balance')">Saldo</div>
                             </div>
                             <t t-set="prev_top_prefix" t-value="False" />
                             <t t-foreach="lines" t-as="line">
@@ -49,8 +65,16 @@
                                 <t t-if="line['line_type'] == 'group' and line['is_top_level']">
                                     <div class="rf-row" style="border: 2px solid #000; padding: 3px 6px; margin-top: 8px; font-weight: 900;">
                                         <div class="rf-col rf-code" style="font-size: 14px; font-weight: 900;"><t t-out="line['code']" /></div>
-                                        <div class="rf-col rf-name" t-att-style="'font-size: 14px; font-weight: 900; text-transform: uppercase; padding-left: %spx;' % (line['level'] * 5)"><t t-out="line['name']" /></div>
-                                        <div class="rf-col rf-balance" style="font-size: 14px; font-weight: 900;">
+                                        <div t-att-class="'rf-col ' + ('rf-name-dc' if show_debit_credit_columns else 'rf-name')" t-att-style="'font-size: 14px; font-weight: 900; text-transform: uppercase; padding-left: %spx;' % (line['level'] * 5)"><t t-out="line['name']" /></div>
+                                        <t t-if="show_debit_credit_columns">
+                                            <div class="rf-col rf-debit" style="font-size: 14px; font-weight: 900;">
+                                                <span style="font-size: 12px;" t-out="line['display_debit']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                            </div>
+                                            <div class="rf-col rf-credit" style="font-size: 14px; font-weight: 900;">
+                                                <span style="font-size: 12px;" t-out="line['display_credit']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                            </div>
+                                        </t>
+                                        <div t-att-class="'rf-col ' + ('rf-balance-dc' if show_debit_credit_columns else 'rf-balance')" style="font-size: 14px; font-weight: 900;">
                                             <span t-out="line['display_balance']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
                                         </div>
                                     </div>
@@ -58,8 +82,16 @@
                                 <t t-if="not (line['line_type'] == 'group' and line['is_top_level'])">
                                     <div class="rf-row" t-att-style="'padding: 1px 2px; ' + ('font-weight: 700;' if line['line_type'] == 'group' else '')">
                                         <div class="rf-col rf-code"><t t-out="line['code']" /></div>
-                                        <div class="rf-col rf-name" t-att-style="'padding-left: %spx;' % (line['level'] * 5)"><t t-out="line['name']" /></div>
-                                        <div class="rf-col rf-balance">
+                                        <div t-att-class="'rf-col ' + ('rf-name-dc' if show_debit_credit_columns else 'rf-name')" t-att-style="'padding-left: %spx;' % (line['level'] * 5)"><t t-out="line['name']" /></div>
+                                        <t t-if="show_debit_credit_columns">
+                                            <div class="rf-col rf-debit">
+                                                <span style="font-size: 9px;" t-out="line['display_debit']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                            </div>
+                                            <div class="rf-col rf-credit">
+                                                <span style="font-size: 9px;" t-out="line['display_credit']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                            </div>
+                                        </t>
+                                        <div t-att-class="'rf-col ' + ('rf-balance-dc' if show_debit_credit_columns else 'rf-balance')">
                                             <span t-out="line['display_balance']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
                                         </div>
                                     </div>

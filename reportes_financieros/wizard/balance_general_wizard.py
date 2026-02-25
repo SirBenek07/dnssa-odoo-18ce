@@ -27,6 +27,10 @@ class BalanceGeneralWizard(models.TransientModel):
         string="Mostrar cuentas sin movimientos",
         default=False,
     )
+    show_debit_credit_columns = fields.Boolean(
+        string="Mostrar Debito y Credito",
+        default=False,
+    )
 
     @api.onchange("date_range_id")
     def _onchange_date_range_id(self):

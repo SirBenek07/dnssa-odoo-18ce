@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <data noupdate="1">
+        <record id="work_entry_type_absence_py" model="hr.work.entry.type">
+            <field name="name">Ausencia Injustificada</field>
+            <field name="code">AUS</field>
+            <field name="is_leave">True</field>
+            <field name="color">1</field>
+        </record>
+
+        <record id="leave_type_vacaciones_py" model="hr.leave.type">
+            <field name="name">Vacaciones PY</field>
+            <field name="requires_allocation">yes</field>
+            <field name="employee_requests">no</field>
+            <field name="leave_validation_type">both</field>
+            <field name="allocation_validation_type">hr</field>
+            <field name="request_unit">day</field>
+            <field name="company_id" eval="False" />
+            <field name="work_entry_type_id" ref="hr_work_entry_contract.work_entry_type_legal_leave" />
+        </record>
+
+        <record id="leave_type_absence_py" model="hr.leave.type">
+            <field name="name">Ausencia injustificada PY</field>
+            <field name="requires_allocation">no</field>
+            <field name="employee_requests">no</field>
+            <field name="leave_validation_type">both</field>
+            <field name="allocation_validation_type">hr</field>
+            <field name="request_unit">day</field>
+            <field name="unpaid" eval="True" />
+            <field name="company_id" eval="False" />
+            <field name="work_entry_type_id" ref="payroll_paraguay.work_entry_type_absence_py" />
+        </record>
+    </data>
+</odoo>

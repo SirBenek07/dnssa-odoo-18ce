@@ -6,8 +6,8 @@
         <field name="inherit_id" ref="account.view_move_form"/>
         <field name="arch" type="xml">
             <xpath expr="//group[@id='header_right_group']/field[@name='payment_reference']" position="after">
-                <field name="timbrado" invisible="move_type != 'in_invoice'" required="move_type == 'in_invoice'"/>
-                <field name="validez_timbrado" invisible="move_type != 'in_invoice'"/>
+                <field name="timbrado" invisible="move_type != 'in_invoice'" required="move_type == 'in_invoice' and state == 'posted'"/>
+                <field name="validez_timbrado" invisible="move_type != 'in_invoice'" required="move_type == 'in_invoice' and state == 'posted'"/>
             </xpath>
         </field>
     </record>
