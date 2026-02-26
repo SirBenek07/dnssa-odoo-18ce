@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_account_payment_register_form_inherit_cheque_managment" model="ir.ui.view">
+        <field name="name">account.payment.register.form.inherit.cheque.managment</field>
+        <field name="model">account.payment.register</field>
+        <field name="inherit_id" ref="account.view_account_payment_register_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='group1']/field[@name='payment_method_line_id']" position="after">
+                <field name="cheque_payment" invisible="1"/>
+                <field
+                    name="cheque_number"
+                    invisible="not cheque_payment"
+                    required="cheque_payment"
+                />
+                <field
+                    name="cheque_issue_date"
+                    invisible="not cheque_payment"
+                    required="cheque_payment"
+                />
+                <field
+                    name="cheque_cash_date"
+                    invisible="not cheque_payment"
+                    required="cheque_payment"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>

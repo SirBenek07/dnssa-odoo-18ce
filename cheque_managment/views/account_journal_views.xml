@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_account_journal_form_inherit_dns_cheque" model="ir.ui.view">
+        <field name="name">account.journal.form.inherit.dns.cheque</field>
+        <field name="model">account.journal</field>
+        <field name="inherit_id" ref="account.view_account_journal_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    name="action_open_cheques"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-money"
+                    invisible="type != 'bank' or not emit_check"
+                >
+                    <field name="cheque_count" widget="statinfo" string="Cheques"/>
+                </button>
+            </xpath>
+
+            <xpath expr="//page[@id='outbound_payment_settings']/field[@name='outbound_payment_method_line_ids']" position="before">
+                <group invisible="type != 'bank'">
+                    <group string="Cheques">
+                        <field
+                            name="emit_check"
+                            string="Emite cheques"
+                            help="Al activar esta opcion se habilita el metodo de pago saliente 'Cheque' y el control de cheques emitidos."
+                        />
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

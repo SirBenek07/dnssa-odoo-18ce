@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_inherit_account_state_payment" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.account.state.payment</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='account']" position="inside">
+                <block title="Estados de pago" name="account_state_payment_block">
+                    <setting
+                        id="use_in_payment_state_until_bank_match"
+                        string="Usar 'En proceso de pago' hasta conciliacion bancaria"
+                        company_dependent="1"
+                        help="Mantener las facturas en 'En proceso de pago' hasta que el pago se concilie con el extracto bancario."
+                    >
+                        <field name="use_in_payment_state_until_bank_match"/>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

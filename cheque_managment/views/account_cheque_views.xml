@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_account_cheque_list" model="ir.ui.view">
+        <field name="name">account.cheque.list</field>
+        <field name="model">account.cheque</field>
+        <field name="arch" type="xml">
+            <list
+                string="Gestion de cheques"
+                decoration-info="state == 'draft'"
+                decoration-danger="is_cash_due"
+                decoration-success="state == 'cashed'"
+            >
+                <field name="is_cash_due" column_invisible="True"/>
+                <field name="check_number" string="Nro. cheque" width="110px"/>
+                <field name="issue_date" string="Fecha emision" width="160px"/>
+                <field name="cash_date" string="Fecha cobro" width="160px"/>
+                <field name="partner_id"/>
+                <field name="amount" optional="show"/>
+                <field name="journal_id"/>
+                <field name="state" widget="badge"
+                    decoration-info="state == 'draft'"
+                    decoration-success="state == 'cashed'"
+                    decoration-danger="is_cash_due"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_account_cheque_search" model="ir.ui.view">
+        <field name="name">account.cheque.search</field>
+        <field name="model">account.cheque</field>
+        <field name="arch" type="xml">
+            <search string="Buscar cheques">
+                <field name="check_number"/>
+                <field name="partner_id"/>
+                <field name="journal_id"/>
+                <field name="cash_date"/>
+                <filter name="active_cheques" string="Activos" domain="[('state', 'not in', ('draft', 'cancelled'))]"/>
+                <separator/>
+                <filter name="filter_draft" string="Borrador" domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_issued" string="Emitido" domain="[('state', '=', 'issued')]"/>
+                <filter name="filter_cashed" string="Cobrado" domain="[('state', '=', 'cashed')]"/>
+                <filter name="filter_cancelled" string="Cancelado" domain="[('state', '=', 'cancelled')]"/>
+                <separator/>
+                <filter name="group_by_journal" string="Banco" context="{'group_by': 'journal_id'}"/>
+                <filter name="group_by_state" string="Estado" context="{'group_by': 'state'}"/>
+                <filter name="group_by_partner" string="Proveedor" context="{'group_by': 'partner_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_account_cheque_form" model="ir.ui.view">
+        <field name="name">account.cheque.form</field>
+        <field name="model">account.cheque</field>
+        <field name="arch" type="xml">
+            <form string="Cheque">
+                <header>
+                    <button name="action_set_draft" type="object" string="Borrador" invisible="state == 'draft'"/>
+                    <button name="action_set_issued" type="object" string="Emitir" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_set_cashed" type="object" string="Cobrar" class="btn-success" invisible="state != 'issued' or payment_id"/>
+                    <button name="action_set_cancelled" type="object" string="Cancelar" invisible="state in ('cashed', 'cancelled')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,issued,cashed,cancelled"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="check_number"/>
+                            <field name="journal_id"/>
+                            <field name="partner_id"/>
+                            <field name="payment_id" readonly="1"/>
+                            <field name="amount"/>
+                        </group>
+                        <group>
+                            <field name="issue_date"/>
+                            <field name="cash_date"/>
+                            <field name="company_id" groups="base.group_multi_company" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_account_cheque_calendar" model="ir.ui.view">
+        <field name="name">account.cheque.calendar</field>
+        <field name="model">account.cheque</field>
+        <field name="arch" type="xml">
+            <calendar string="Calendario de cheques" date_start="cash_date" color="journal_id" mode="month" event_open_popup="true">
+                <field name="calendar_label"/>
+                <field name="check_number" invisible="1"/>
+                <field name="partner_id"/>
+                <field name="journal_id"/>
+                <field name="state"/>
+                <field name="issue_date"/>
+                <field name="amount"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="action_account_cheque" model="ir.actions.act_window">
+        <field name="name">Gestion cheques</field>
+        <field name="res_model">account.cheque</field>
+        <field name="view_mode">list,calendar,form</field>
+        <field name="search_view_id" ref="view_account_cheque_search"/>
+        <field name="context">{'search_default_active_cheques': 1}</field>
+    </record>
+
+    <menuitem
+        id="menu_account_cheque_management"
+        name="Gestion cheques"
+        parent="account.menu_finance_entries"
+        action="action_account_cheque"
+        groups="account.group_account_readonly"
+        sequence="40"
+    />
+</odoo>
