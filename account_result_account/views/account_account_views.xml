@@ -9,6 +9,7 @@
                 <page string="Resultado" name="result_account_page">
                     <group>
                         <field name="is_result_account"/>
+                        <field name="is_renta_account" invisible="not is_result_account"/>
                     </group>
                     <field
                         name="result_range_ids"

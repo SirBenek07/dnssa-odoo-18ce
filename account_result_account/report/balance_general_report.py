@@ -1,5 +1,6 @@
 from odoo import api, models
 from odoo.tools.float_utils import float_is_zero
+from odoo.tools import float_round
 
 
 class BalanceGeneralReport(models.AbstractModel):
@@ -30,9 +31,9 @@ class BalanceGeneralReport(models.AbstractModel):
             [
                 ("company_ids", "in", [wizard.company_id.id]),
                 ("is_result_account", "=", True),
-                ("result_range_ids", "!=", False),
             ]
         )
+        result_accounts = result_accounts.filtered(lambda a: a.result_range_ids)
         if not result_accounts:
             return []
 
@@ -71,6 +72,7 @@ class BalanceGeneralReport(models.AbstractModel):
 
         partial_lines = []
         rounding = wizard.company_id.currency_id.rounding
+        computed_result_balance_map = {}
         for result_account in result_accounts.sorted(key=lambda a: self._code_sort_key(a.code)):
             total = 0.0
             range_labels = []
@@ -80,15 +82,21 @@ class BalanceGeneralReport(models.AbstractModel):
                 range_accounts = self._get_range_accounts(
                     wizard.company_id.id, range_line.code_from, range_line.code_to
                 )
-                subtotal = sum(
-                    display_balance_map.get(range_account.id, 0.0)
-                    for range_account in range_accounts
-                )
+                subtotal = 0.0
+                for range_account in range_accounts:
+                    if range_account.id in computed_result_balance_map:
+                        subtotal += computed_result_balance_map[range_account.id]
+                    else:
+                        subtotal += display_balance_map.get(range_account.id, 0.0)
                 sign = -1 if range_line.sign == "minus" else 1
                 total += sign * subtotal
                 range_labels.append(
                     f"{'-' if sign < 0 else '+'} {range_line.code_from}..{range_line.code_to}"
                 )
+            if result_account.is_renta_account:
+                total *= 0.10
+            total = float_round(total, precision_rounding=1.0)
+            computed_result_balance_map[result_account.id] = total
 
             if (
                 not wizard.show_accounts_without_moves

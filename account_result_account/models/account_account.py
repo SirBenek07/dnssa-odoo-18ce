@@ -6,6 +6,7 @@ class AccountAccount(models.Model):
     _inherit = "account.account"
 
     is_result_account = fields.Boolean(string="Es cuenta de resultado")
+    is_renta_account = fields.Boolean(string="Es cuenta de Renta")
     result_range_ids = fields.One2many(
         comodel_name="account.account.result.range",
         inverse_name="account_id",
