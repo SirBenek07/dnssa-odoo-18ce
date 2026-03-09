@@ -16,7 +16,6 @@
 
     <template id="s_dns_cfo_full" name="DNS CFO Landing Completa">
         <section class="s_dns_cfo s_dns_cfo_full pt0 pb0" data-name="DNS CFO Landing Completa">
-            <t t-call="dns_website_snippets.s_dns_cfo_nav_content"/>
             <t t-call="dns_website_snippets.s_dns_cfo_hero_content"/>
             <t t-call="dns_website_snippets.s_dns_cfo_pain_content"/>
             <t t-call="dns_website_snippets.s_dns_cfo_solutions_content"/>
@@ -29,7 +28,6 @@
 
     <template id="s_dns_cfo_hero" name="DNS Hero">
         <section class="s_dns_cfo pt0 pb0" data-name="DNS Hero">
-            <t t-call="dns_website_snippets.s_dns_cfo_nav_content"/>
             <t t-call="dns_website_snippets.s_dns_cfo_hero_content"/>
         </section>
     </template>
@@ -70,25 +68,9 @@
         </section>
     </template>
 
-    <template id="s_dns_cfo_nav_content" name="DNS Nav contenido">
-        <div class="dns-nav">
-            <div class="container">
-                <div class="dns-nav-inner">
-                    <div class="dns-brand">
-                        <span class="dns-brand-badge" aria-hidden="true"/>
-                        <span>DNS SA</span>
-                    </div>
-                    <div class="dns-menu" aria-label="Navegacion principal">
-                        <a href="#dolor">Dolor</a>
-                        <a href="#soluciones">Soluciones</a>
-                        <a href="#autoridad">Autoridad</a>
-                        <a href="#icp">Para quien</a>
-                        <a href="#contacto">Contacto</a>
-                    </div>
-                    <a class="dns-btn dns-btn-primary" href="#contacto">Agendar diagnostico</a>
-                </div>
-            </div>
-        </div>
+    <template id="s_dns_cfo_nav_content" name="DNS Nav contenido (deprecated)">
+        <!-- Compatibility stub: keep XML ID during transition to avoid upgrade issues. -->
+        <div class="d-none" data-dns-nav-deprecated="1"/>
     </template>
 
     <template id="s_dns_cfo_hero_content" name="DNS Hero contenido">
