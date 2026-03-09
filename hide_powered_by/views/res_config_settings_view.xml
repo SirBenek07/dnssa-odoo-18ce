@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="dns_hide_powered_by_config_settings_view" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.dns.hide.powered.by</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@id='user_default_rights']" position="before">
+                <block title="Marca en login y footer" id="dns_hide_powered_by_setting_block">
+                    <setting id="dns_mostrar_powered_by_login" string="Mostrar 'Powered by Odoo' en login" help="Controla el enlace 'Powered by Odoo' en la pantalla de acceso.">
+                        <field name="mostrar_powered_by_login"/>
+                    </setting>
+                    <setting id="dns_mostrar_powered_by_sitio" string="Mostrar 'Powered by Odoo' en sitio web" help="Controla la marca en el pie del sitio web.">
+                        <field name="mostrar_powered_by_sitio"/>
+                    </setting>
+                    <setting id="dns_texto_html_footer" string="Texto personalizado del footer (HTML)" help="Si se completa, reemplaza el texto por defecto del footer.">
+                        <field name="texto_html_footer" widget="html" options="{'style-inline': True}" placeholder="Escriba un texto personalizado para el pie de página"/>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

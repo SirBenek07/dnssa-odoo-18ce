@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="dns_login_page_layout" inherit_id="web.login_layout" name="Layout de login DNS">
+        <xpath expr="//div[@class='text-center small mt-4 pt-3 border-top']" position="replace">
+            <div class="text-center small mt-4 pt-3 border-top" t-if="not disable_footer">
+                <t t-if="not disable_database_manager">
+                    <a class="pe-2 me-1" href="/web/database/manager">Gestionar bases de datos</a>
+                </t>
+                <t t-if="request.env['ir.config_parameter'].sudo().get_param('dns_hide_powered_by.mostrar_powered_by_login', 'False') == 'True'">
+                    <a href="https://www.odoo.com?utm_source=db&amp;utm_medium=auth">Powered by Odoo</a>
+                </t>
+            </div>
+        </xpath>
+    </template>
+</odoo>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="dns_web_brand_promotion_message_custom" inherit_id="web.brand_promotion_message">
+        <xpath expr="//t[@t-out=&quot;final_message % (odoo_logo, _message and ('- ' + _message) or '')&quot;]" position="replace">
+            <t t-if="request.env['ir.config_parameter'].sudo().get_param('dns_hide_powered_by.mostrar_powered_by_sitio', 'True') == 'True'">
+                <t t-set="dns_footer_html" t-value="request.env['ir.config_parameter'].sudo().get_param('dns_hide_powered_by.texto_html_footer', '')"/>
+                <t t-if="dns_footer_html">
+                    <t t-raw="dns_footer_html"/>
+                </t>
+                <t t-else="" t-out="final_message % (odoo_logo, _message and ('- ' + _message) or '')"/>
+            </t>
+        </xpath>
+    </template>
+</odoo>
