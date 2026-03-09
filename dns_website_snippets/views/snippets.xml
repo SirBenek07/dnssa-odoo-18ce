@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="snippets" inherit_id="website.snippets" name="DNS CFO snippets">
+        <xpath expr="//snippets[@id='snippet_structure']/t[@t-snippet][1]" position="before">
+            <t t-snippet="dns_website_snippets.s_dns_cfo_full" string="DNS CFO Landing Completa" group="custom" t-thumbnail="/website/static/src/img/snippets_thumbs/s_cover.svg"/>
+            <t t-snippet="dns_website_snippets.s_dns_cfo_hero" string="DNS Hero" group="custom" t-thumbnail="/website/static/src/img/snippets_thumbs/s_banner.svg"/>
+            <t t-snippet="dns_website_snippets.s_dns_cfo_pain" string="DNS Dolor" group="custom" t-thumbnail="/website/static/src/img/snippets_thumbs/s_features.svg"/>
+            <t t-snippet="dns_website_snippets.s_dns_cfo_solutions" string="DNS Soluciones" group="custom" t-thumbnail="/website/static/src/img/snippets_thumbs/s_cards_grid.svg"/>
+            <t t-snippet="dns_website_snippets.s_dns_cfo_authority" string="DNS Autoridad" group="custom" t-thumbnail="/website/static/src/img/snippets_thumbs/s_numbers.svg"/>
+            <t t-snippet="dns_website_snippets.s_dns_cfo_icp" string="DNS Para Quien" group="custom" t-thumbnail="/website/static/src/img/snippets_thumbs/s_three_columns.svg"/>
+            <t t-snippet="dns_website_snippets.s_dns_cfo_contact" string="DNS Contacto" group="custom" t-thumbnail="/website/static/src/img/snippets_thumbs/s_website_form.svg"/>
+            <t t-snippet="dns_website_snippets.s_dns_cfo_footer" string="DNS Footer" group="custom" t-thumbnail="/website/static/src/img/snippets_thumbs/s_text_block.svg"/>
+        </xpath>
+    </template>
+
+    <template id="s_dns_cfo_full" name="DNS CFO Landing Completa">
+        <section class="s_dns_cfo s_dns_cfo_full pt0 pb0" data-name="DNS CFO Landing Completa">
+            <t t-call="dns_website_snippets.s_dns_cfo_nav_content"/>
+            <t t-call="dns_website_snippets.s_dns_cfo_hero_content"/>
+            <t t-call="dns_website_snippets.s_dns_cfo_pain_content"/>
+            <t t-call="dns_website_snippets.s_dns_cfo_solutions_content"/>
+            <t t-call="dns_website_snippets.s_dns_cfo_authority_content"/>
+            <t t-call="dns_website_snippets.s_dns_cfo_icp_content"/>
+            <t t-call="dns_website_snippets.s_dns_cfo_contact_content"/>
+            <t t-call="dns_website_snippets.s_dns_cfo_footer_content"/>
+        </section>
+    </template>
+
+    <template id="s_dns_cfo_hero" name="DNS Hero">
+        <section class="s_dns_cfo pt0 pb0" data-name="DNS Hero">
+            <t t-call="dns_website_snippets.s_dns_cfo_nav_content"/>
+            <t t-call="dns_website_snippets.s_dns_cfo_hero_content"/>
+        </section>
+    </template>
+
+    <template id="s_dns_cfo_pain" name="DNS Dolor">
+        <section class="s_dns_cfo pt0 pb0" data-name="DNS Dolor">
+            <t t-call="dns_website_snippets.s_dns_cfo_pain_content"/>
+        </section>
+    </template>
+
+    <template id="s_dns_cfo_solutions" name="DNS Soluciones">
+        <section class="s_dns_cfo pt0 pb0" data-name="DNS Soluciones">
+            <t t-call="dns_website_snippets.s_dns_cfo_solutions_content"/>
+        </section>
+    </template>
+
+    <template id="s_dns_cfo_authority" name="DNS Autoridad">
+        <section class="s_dns_cfo pt0 pb0" data-name="DNS Autoridad">
+            <t t-call="dns_website_snippets.s_dns_cfo_authority_content"/>
+        </section>
+    </template>
+
+    <template id="s_dns_cfo_icp" name="DNS Para Quien">
+        <section class="s_dns_cfo pt0 pb0" data-name="DNS Para Quien">
+            <t t-call="dns_website_snippets.s_dns_cfo_icp_content"/>
+        </section>
+    </template>
+
+    <template id="s_dns_cfo_contact" name="DNS Contacto">
+        <section class="s_dns_cfo pt0 pb0" data-name="DNS Contacto">
+            <t t-call="dns_website_snippets.s_dns_cfo_contact_content"/>
+        </section>
+    </template>
+
+    <template id="s_dns_cfo_footer" name="DNS Footer">
+        <section class="s_dns_cfo pt0 pb0" data-name="DNS Footer">
+            <t t-call="dns_website_snippets.s_dns_cfo_footer_content"/>
+        </section>
+    </template>
+
+    <template id="s_dns_cfo_nav_content" name="DNS Nav contenido">
+        <div class="dns-nav">
+            <div class="container">
+                <div class="dns-nav-inner">
+                    <div class="dns-brand">
+                        <span class="dns-brand-badge" aria-hidden="true"/>
+                        <span>DNS SA</span>
+                    </div>
+                    <div class="dns-menu" aria-label="Navegacion principal">
+                        <a href="#dolor">Dolor</a>
+                        <a href="#soluciones">Soluciones</a>
+                        <a href="#autoridad">Autoridad</a>
+                        <a href="#icp">Para quien</a>
+                        <a href="#contacto">Contacto</a>
+                    </div>
+                    <a class="dns-btn dns-btn-primary" href="#contacto">Agendar diagnostico</a>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="s_dns_cfo_hero_content" name="DNS Hero contenido">
+        <header class="dns-hero" id="home">
+            <div class="container">
+                <div class="dns-hero-grid">
+                    <div>
+                        <div class="dns-kicker"><span class="dns-kicker-dot"/> Asesoria Financiera Corporativa (CFO Advisory) - Paraguay</div>
+                        <h1>Tu empresa ya supero la etapa de las intuiciones. Es hora de gobernar tus finanzas.</h1>
+                        <p class="dns-lead mt-3">
+                            Asesoria Financiera Corporativa (CFO Advisory) exclusiva para empresas medianas en Paraguay.
+                            Traducimos tu desorden contable en <b>rentabilidad</b>, <b>caja liberada</b> y <b>control patrimonial absoluto</b>.
+                        </p>
+                        <div class="dns-hero-actions">
+                            <a class="dns-btn dns-btn-primary" href="#contacto">Agendar un Diagnostico Express</a>
+                            <a class="dns-btn dns-btn-outline" href="#soluciones">Ver soluciones</a>
+                        </div>
+                        <p class="dns-tiny dns-trustline">Aplicando el rigor financiero de proyectos multilaterales al sector privado desde 2007.</p>
+                    </div>
+                    <div class="dns-hero-card">
+                        <h3>Que vas a conseguir</h3>
+                        <p>- Claridad de margen real y punto de equilibrio</p>
+                        <p>- Ruta de 90 dias para frenar hemorragias de caja</p>
+                        <p>- Gobierno financiero: rutina, tablero y decisiones</p>
+                        <p class="mt-2" style="opacity:.72;">(Bloque opcional: caso breve / cifra verificable)</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+    </template>
+
+    <template id="s_dns_cfo_pain_content" name="DNS Dolor contenido">
+        <section class="dns-pain" id="dolor">
+            <div class="container">
+                <div class="dns-pain-head">
+                    <h2>Ganas dinero en la operacion, pero lo perdes en el escritorio.</h2>
+                    <p class="dns-muted mt-2">
+                        Manejar una empresa que factura millones no deberia sentirse como apagar incendios todos los dias.
+                        Si te identificas con estos sintomas, tu motor financiero esta roto:
+                    </p>
+                </div>
+
+                <div class="dns-grid-4">
+                    <div class="dns-pain-card">
+                        <div class="dns-pain-icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                <path d="M7 3h7l3 3v15H7V3Z" stroke="var(--dns-alert)" stroke-width="1.6"/>
+                                <path d="M14 3v4h4" stroke="var(--dns-alert)" stroke-width="1.6"/>
+                                <path d="M9 13h6" stroke="var(--dns-alert)" stroke-width="1.6"/>
+                                <path d="M12 10v6" stroke="var(--dns-alert)" stroke-width="1.6"/>
+                            </svg>
+                        </div>
+                        <h3>El sindrome del balance ciego</h3>
+                        <p>Tenes balances que sirven para pagar impuestos, pero no te dicen cuanto margen real deja tu negocio.</p>
+                    </div>
+
+                    <div class="dns-pain-card">
+                        <div class="dns-pain-icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                <path d="M4 10h16" stroke="var(--dns-alert-2)" stroke-width="1.6"/>
+                                <path d="M6 10v9M10 10v9M14 10v9M18 10v9" stroke="var(--dns-alert-2)" stroke-width="1.6"/>
+                                <path d="M3 10l9-6 9 6" stroke="var(--dns-alert-2)" stroke-width="1.6"/>
+                            </svg>
+                        </div>
+                        <h3>El impuesto al desorden</h3>
+                        <p>Los bancos te perciben como riesgoso por falta de informacion clara, cobrando tasas mas altas.</p>
+                    </div>
+
+                    <div class="dns-pain-card">
+                        <div class="dns-pain-icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                <path d="M4 7h16v10H4V7Z" stroke="var(--dns-alert)" stroke-width="1.6"/>
+                                <path d="M7 12h4" stroke="var(--dns-alert)" stroke-width="1.6"/>
+                                <path d="M15 10l3 3m0-3-3 3" stroke="var(--dns-alert)" stroke-width="1.6"/>
+                            </svg>
+                        </div>
+                        <h3>Caja estresada</h3>
+                        <p>Estas financiando deudas estructurales con plata de corto plazo y sobregiros asfixiantes.</p>
+                    </div>
+
+                    <div class="dns-pain-card">
+                        <div class="dns-pain-icon" aria-hidden="true">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="var(--dns-alert-2)" stroke-width="1.6"/>
+                                <path d="M6 21a6 6 0 0 1 12 0" stroke="var(--dns-alert-2)" stroke-width="1.6"/>
+                            </svg>
+                        </div>
+                        <h3>Soledad directiva</h3>
+                        <p>Las decisiones pesadas recaen sobre una sola persona sin datos duros que la respalden.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </template>
+
+    <template id="s_dns_cfo_solutions_content" name="DNS Soluciones contenido">
+        <section class="dns-solutions" id="soluciones">
+            <div class="container">
+                <div class="dns-solutions-head">
+                    <h2>Nuestras Soluciones: Inteligencia Financiera a Medida.</h2>
+                    <p class="dns-muted mt-2"><b>No vendemos horas de consultoria.</b> Vendemos resultados, orden y paz mental.</p>
+                </div>
+                <div class="dns-cards-3">
+                    <article class="dns-svc">
+                        <div class="dns-tag">Paso 1 Recomendado</div>
+                        <h3>Diagnostico Financiero Express <span class="dns-muted">(Intervencion Tactica)</span></h3>
+                        <p class="dns-sub">En solo 3 semanas, auditamos margenes reales, mapeamos deuda y calculamos tu punto de equilibrio exacto.</p>
+                        <div class="dns-deliverable"><b>Entregable:</b> Matriz de riesgos financieros y mapa de ruta de 3 pasos urgentes para frenar la hemorragia de caja.</div>
+                        <div class="dns-ideal"><b>Ideal para:</b> Empresas estresadas que necesitan respuestas inmediatas sin burocracia.</div>
+                    </article>
+                    <article class="dns-svc">
+                        <h3>Direccion Financiera Externa <span class="dns-muted">(CFO as a Service)</span></h3>
+                        <p class="dns-sub">Asumimos el rol de CFO sin el costo fijo de un gerente a tiempo completo.</p>
+                        <div class="dns-dash" aria-hidden="true"/>
+                        <div class="dns-deliverable"><b>Entregable:</b> Comites financieros mensuales, negociacion directa con bancos, y dashboard en tiempo real.</div>
+                    </article>
+                    <article class="dns-svc">
+                        <h3>Estructuracion y Data Room <span class="dns-muted">(Preparacion para el Crecimiento)</span></h3>
+                        <p class="dns-sub">El mercado castiga el desorden. Preparamos tu empresa para deuda, socios, auditorias o sucesion.</p>
+                        <div class="dns-deliverable"><b>Entregable:</b> Balances gerenciales normalizados, proyecciones a 5 anos y Data Room listo para bancos y M&amp;A.</div>
+                    </article>
+                </div>
+            </div>
+        </section>
+    </template>
+
+    <template id="s_dns_cfo_authority_content" name="DNS Autoridad contenido">
+        <section class="dns-authority" id="autoridad">
+            <div class="container">
+                <div class="dns-authority-grid">
+                    <div>
+                        <h2>El estandar multilateral, ahora en tu directorio.</h2>
+                        <p class="mt-3">
+                            DNS SA no es una consultora improvisada. Nacimos en 2007. Durante 19 anos, fuimos brazo ejecutor y controlador de proyectos
+                            complejos para organismos multilaterales y el Estado paraguayo, manejando estandares de <b>compliance</b>, <b>riesgo</b> y <b>auditoria</b>.
+                        </p>
+                        <p class="mt-2">
+                            Hoy, ese rigor documental y capacidad de ejecucion multiactor esta al servicio exclusivo de proteger y escalar el patrimonio de tu empresa privada.
+                        </p>
+                        <div class="dns-pill-row">
+                            <span class="dns-pill">Senioridad de Big 4</span>
+                            <span class="dns-pill">Velocidad de Boutique</span>
+                            <span class="dns-pill">100% Objetivos</span>
+                        </div>
+                    </div>
+                    <div class="dns-numbers">
+                        <p class="dns-big">19</p>
+                        <div class="dns-label">Anos de rigor multilateral aplicados al sector privado</div>
+                        <div class="dns-sub">2007 - Hoy | Cumplimiento | Control | Rendicion | Riesgo</div>
+                        <div class="dns-sub mt-2" style="opacity:.75;">(Opcional: aqui van cifras verificadas / rangos publicables / NDA)</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </template>
+
+    <template id="s_dns_cfo_icp_content" name="DNS ICP contenido">
+        <section class="dns-icp" id="icp">
+            <div class="container">
+                <div class="dns-icp-head">
+                    <h2>Especialistas en el Midmarket Paraguayo.</h2>
+                    <p class="dns-muted mt-2">
+                        No asesoramos a microempresas ni hacemos liquidaciones de impuestos rutinarias.
+                        Nuestro ecosistema: empresas con complejidad real (<b>USD 2M a USD 30M</b> de facturacion anual) en sectores dinamicos.
+                    </p>
+                </div>
+                <div class="dns-icp-grid">
+                    <div class="dns-icp-card"><div><h3>Agroindustria y Ganaderia</h3><p>Acopios, silos, grandes extensiones.</p></div></div>
+                    <div class="dns-icp-card"><div><h3>Logistica y Transporte</h3><p>Flota, rutas, costos y caja operativa.</p></div></div>
+                    <div class="dns-icp-card"><div><h3>Retail B2B y Distribucion</h3><p>Rotacion, margen, cobranza, inventario.</p></div></div>
+                    <div class="dns-icp-card"><div><h3>Manufactura y Construccion</h3><p>Costeo, presupuesto, control y riesgo.</p></div></div>
+                </div>
+            </div>
+        </section>
+    </template>
+
+    <template id="s_dns_cfo_contact_content" name="DNS Contacto contenido">
+        <section class="dns-contact" id="contacto">
+            <div class="container">
+                <div class="dns-contact-grid">
+                    <div>
+                        <h2>Hablemos de tu rentabilidad.</h2>
+                        <p class="dns-muted mt-2">Completa el formulario. Un socio director de DNS SA revisara tu caso y se pondra en contacto para agendar una sesion inicial confidencial.</p>
+                        <div class="dns-fit-box mt-3">
+                            <p class="m-0 fw-bold">Filtro de encaje</p>
+                            <p class="dns-muted mt-2 mb-0">Trabajamos con empresas medianas (midmarket). Si tu facturacion esta por debajo de USD 1M, igual podemos orientarte con un camino alternativo.</p>
+                        </div>
+                    </div>
+                    <div class="dns-form-card">
+                        <div class="dns-field">
+                            <label>Nombre Completo</label>
+                            <input type="text" placeholder="Ej: Juan Perez"/>
+                        </div>
+                        <div class="dns-field">
+                            <label>Cargo</label>
+                            <select>
+                                <option selected="selected">Seleccionar</option>
+                                <option>Dueno</option>
+                                <option>Socio</option>
+                                <option>Gerente General</option>
+                            </select>
+                        </div>
+                        <div class="dns-field">
+                            <label>Empresa</label>
+                            <input type="text" placeholder="Nombre de la empresa"/>
+                        </div>
+                        <div class="dns-field">
+                            <label>Rango de Facturacion Anual</label>
+                            <select>
+                                <option selected="selected">Seleccionar</option>
+                                <option>Menos de USD 1M</option>
+                                <option>USD 1M a 5M</option>
+                                <option>Mas de USD 5M</option>
+                            </select>
+                        </div>
+                        <div class="dns-field">
+                            <label>Principal desafio hoy</label>
+                            <select>
+                                <option selected="selected">Seleccionar</option>
+                                <option>Flujo de caja estresado</option>
+                                <option>Desorden contable</option>
+                                <option>Necesito reestructurar deuda bancaria</option>
+                                <option>Otro</option>
+                            </select>
+                        </div>
+                        <a class="dns-btn dns-btn-primary dns-btn-wide" href="/contactus">Solicitar Analisis Confidencial</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </template>
+
+    <template id="s_dns_cfo_footer_content" name="DNS Footer contenido">
+        <footer class="dns-footer">
+            <div class="container">
+                <div class="dns-footer-row">
+                    <div><b>DNS SA</b> - Asesoria Financiera Corporativa</div>
+                    <div>Oscar Carreras Saguier 566, Asuncion | +595 21672733 | www.dnssa.com.py</div>
+                </div>
+            </div>
+        </footer>
+    </template>
+
+</odoo>
