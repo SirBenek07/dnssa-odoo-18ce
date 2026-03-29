@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <template id="hide_blog_card_publication_link"
+              inherit_id="website_blog.dynamic_filter_template_blog_post_card"
+              name="Hide blog card publication link">
+        <xpath expr="//div[contains(@class, 'card-footer')]/span[contains(@class, 'text-muted')]" position="replace"/>
+    </template>
+
     <template id="snippets" inherit_id="website.snippets" name="DNS CFO snippets">
         <xpath expr="//snippets[@id='snippet_structure']/t[@t-snippet][1]" position="before">
             <t t-snippet="dns_website_snippets.s_dns_cfo_full" string="DNS CFO Landing Completa" group="custom" t-thumbnail="/website/static/src/img/snippets_thumbs/s_cover.svg"/>

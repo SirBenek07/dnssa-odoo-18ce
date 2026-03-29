@@ -6,7 +6,7 @@
     "category": "Website",
     "author": "DNS SA",
     "license": "LGPL-3",
-    "depends": ["website"],
+    "depends": ["website", "website_blog"],
     "data": [
         "views/snippets.xml",
     ],
