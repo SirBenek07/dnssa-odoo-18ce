@@ -16,7 +16,7 @@
     <template id="hide_blog_post_breadcrumbs"
               inherit_id="website_blog.post_breadcrumbs"
               name="Hide blog post breadcrumbs">
-        <xpath expr="//nav[@aria-label='breadcrumb']" position="replace"/>
+        <xpath expr="//nav[hasclass('breadcrumb')]" position="replace"/>
     </template>
 
     <template id="snippets" inherit_id="website.snippets" name="DNS CFO snippets">
