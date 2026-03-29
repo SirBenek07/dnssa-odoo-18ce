@@ -13,6 +13,12 @@
         <xpath expr="//div[@t-if='len(blogs) > 1 or len(blog_post.tag_ids) > 0']/div[@t-if='len(blogs) > 1']" position="replace"/>
     </template>
 
+    <template id="hide_blog_post_breadcrumbs"
+              inherit_id="website_blog.post_breadcrumbs"
+              name="Hide blog post breadcrumbs">
+        <xpath expr="//nav[@aria-label='breadcrumb']" position="replace"/>
+    </template>
+
     <template id="snippets" inherit_id="website.snippets" name="DNS CFO snippets">
         <xpath expr="//snippets[@id='snippet_structure']/t[@t-snippet][1]" position="before">
             <t t-snippet="dns_website_snippets.s_dns_cfo_full" string="DNS CFO Landing Completa" group="custom" t-thumbnail="/website/static/src/img/snippets_thumbs/s_cover.svg"/>
