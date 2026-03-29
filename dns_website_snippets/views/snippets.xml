@@ -14,9 +14,15 @@
     </template>
 
     <template id="hide_blog_post_breadcrumbs"
-              inherit_id="website_blog.post_breadcrumbs"
+              inherit_id="website_blog.blog_post_content"
               name="Hide blog post breadcrumbs">
-        <xpath expr="." position="replace"/>
+        <xpath expr="//t[@t-call='website_blog.post_breadcrumbs']" position="replace"/>
+    </template>
+
+    <template id="hide_blog_post_regular_cover_breadcrumbs"
+              inherit_id="website_blog.opt_blog_post_regular_cover"
+              name="Hide blog post regular cover breadcrumbs">
+        <xpath expr="//t[@t-call='website_blog.post_breadcrumbs']" position="replace"/>
     </template>
 
     <template id="snippets" inherit_id="website.snippets" name="DNS CFO snippets">
