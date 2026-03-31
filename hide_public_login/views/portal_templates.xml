@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="dns_hide_public_signin"
+              inherit_id="portal.placeholder_user_sign_in"
+              name="Ocultar acceso publico al login">
+        <xpath expr="." position="replace">
+            <t t-if="not request.website or not request.website.sudo().hide_public_login">
+                <li t-nocache="Profile session and user group can change unrelated to parent caches."
+                    t-nocache-_item_class="_item_class"
+                    t-nocache-_link_class="_link_class"
+                    groups="base.group_public"
+                    t-attf-class="#{_item_class} o_no_autohide_item">
+                    <a t-attf-href="/web/login"
+                       t-attf-class="#{_link_class}">Sign in<span t-if="request.session.profile_session" class="text-danger fa fa-circle"/></a>
+                </li>
+            </t>
+        </xpath>
+    </template>
+</odoo>

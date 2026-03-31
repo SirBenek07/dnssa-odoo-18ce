@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.dns.hide.public.login</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="website.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//setting[@id='website_login_documents']" position="after">
+                <setting id="dns_hide_public_login_setting"
+                         string="Ocultar acceso publico al login"
+                         help="Oculta el enlace de inicio de sesion visible en la web publica, pero mantiene disponible la URL /web/login.">
+                    <field name="website_hide_public_login"/>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>
