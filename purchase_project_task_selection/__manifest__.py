@@ -9,6 +9,7 @@
     "data": [
         "security/ir.model.access.csv",
         "views/purchase_order_views.xml",
+        "views/account_move_views.xml",
         "views/project_task_views.xml",
         "views/hr_expense_views.xml",
         "wizard/project_cash_flow_wizard_views.xml",
