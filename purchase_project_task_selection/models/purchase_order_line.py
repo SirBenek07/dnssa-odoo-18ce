@@ -102,3 +102,13 @@ class PurchaseOrderLine(models.Model):
             if order.project_id:
                 vals["project_id"] = order.project_id.id
         return super().create(vals_list)
+
+    def _prepare_account_move_line(self, move=False):
+        vals = super()._prepare_account_move_line(move=move)
+        vals.update(
+            {
+                "project_id": self.project_id.id or False,
+                "task_id": self.task_id.id or False,
+            }
+        )
+        return vals

@@ -16,6 +16,11 @@ class ProjectTask(models.Model):
         inverse_name="task_id",
         string="Lineas de compra",
     )
+    vendor_bill_line_ids = fields.One2many(
+        comodel_name="account.move.line",
+        inverse_name="task_id",
+        string="Lineas de factura proveedor",
+    )
     purchase_line_count = fields.Integer(
         string="Compras",
         compute="_compute_purchase_line_count",
@@ -44,7 +49,10 @@ class ProjectTask(models.Model):
 
     def _compute_purchase_line_count(self):
         for task in self:
-            task.purchase_line_count = len(task.purchase_line_ids)
+            vendor_bills = task.vendor_bill_line_ids.move_id.filtered(
+                lambda move: move.move_type in ("in_invoice", "in_refund", "in_receipt")
+            )
+            task.purchase_line_count = len(vendor_bills)
 
     def _compute_expense_count(self):
         for task in self:
@@ -52,15 +60,25 @@ class ProjectTask(models.Model):
 
     def action_view_purchase_lines(self):
         self.ensure_one()
+        vendor_bills = self.vendor_bill_line_ids.move_id.filtered(
+            lambda move: move.move_type in ("in_invoice", "in_refund", "in_receipt")
+        )
+        if len(vendor_bills) == 1:
+            return {
+                "type": "ir.actions.act_window",
+                "name": _("Factura de proveedor"),
+                "res_model": "account.move",
+                "view_mode": "form",
+                "res_id": vendor_bills.id,
+            }
         return {
             "type": "ir.actions.act_window",
-            "name": _("Lineas de compra"),
-            "res_model": "purchase.order.line",
-            "view_mode": "list,form,pivot,graph",
-            "domain": [("task_id", "=", self.id)],
+            "name": _("Facturas de proveedor"),
+            "res_model": "account.move",
+            "view_mode": "list,form",
+            "domain": [("id", "in", vendor_bills.ids)],
             "context": {
-                "default_task_id": self.id,
-                "default_project_id": self.project_id.id,
+                "default_move_type": "in_invoice",
             },
         }
 
