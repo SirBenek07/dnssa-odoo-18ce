@@ -6,26 +6,38 @@ from odoo.tools import float_round
 class BalanceGeneralReport(models.AbstractModel):
     _inherit = "report.reportes_financieros.balance_general_pdf"
 
+    def _get_year_result_account(self, wizard):
+        account = wizard.company_id.year_result_account_id
+        if account:
+            return account
+        return self.env["account.account"].search(
+            [
+                ("company_ids", "in", [wizard.company_id.id]),
+                ("is_year_result_account", "=", True),
+            ],
+            limit=1,
+        )
+
+    def _code_is_in_range(self, account_code, code_from, code_to):
+        if not account_code or not code_from or not code_to:
+            return False
+        from_parts = code_from.split(".")
+        to_parts = code_to.split(".")
+        depth = min(len(from_parts), len(to_parts))
+        account_parts = account_code.split(".")
+        comparable_code = ".".join(account_parts[:depth]) if len(account_parts) >= depth else account_code
+        return self._code_sort_key(code_from) <= self._code_sort_key(comparable_code) <= self._code_sort_key(code_to)
+
     def _get_range_accounts(self, company_id, code_from, code_to):
         account_model = self.env["account.account"]
-        if code_from and code_to and code_from == code_to:
-            return account_model.search(
-                [
-                    ("company_ids", "in", [company_id]),
-                    "|",
-                    ("code", "=", code_from),
-                    ("code", "=like", f"{code_from}%"),
-                ]
-            )
-        return account_model.search(
-            [
-                ("company_ids", "in", [company_id]),
-                ("code", ">=", code_from),
-                ("code", "<=", code_to),
-            ]
+        company_accounts = account_model.search([("company_ids", "in", [company_id])])
+        return company_accounts.filtered(
+            lambda account: self._code_is_in_range(account.code, code_from, code_to)
         )
 
     def _get_partial_result_lines(self, wizard):
+        if not wizard.show_result_accounts:
+            return []
         account_model = self.env["account.account"]
         result_accounts = account_model.search(
             [
@@ -33,7 +45,9 @@ class BalanceGeneralReport(models.AbstractModel):
                 ("is_result_account", "=", True),
             ]
         )
-        result_accounts = result_accounts.filtered(lambda a: a.result_range_ids)
+        result_accounts = result_accounts.filtered(
+            lambda a: not a.is_year_result_account and a.result_range_ids
+        )
         if not result_accounts:
             return []
 
@@ -119,15 +133,63 @@ class BalanceGeneralReport(models.AbstractModel):
         wizard = values.get("docs")
         partial_lines = self._get_partial_result_lines(wizard)
         existing_by_code = {line.get("code"): line for line in values.get("lines", [])}
+
+        def _sum_child_accounts_display(code):
+            prefix = f"{code}."
+            child_accounts = [
+                line
+                for line in values.get("lines", [])
+                if line.get("line_type") == "account"
+                and str(line.get("code") or "").startswith(prefix)
+            ]
+            total = 0.0
+            for line in child_accounts:
+                account_type = line.get("account_type") or ""
+                display_value = line.get("display_balance", 0.0)
+                # For partial result parent lines, treat expenses as negative and
+                # income as positive when aggregating visible children.
+                if account_type.startswith("expense"):
+                    total += -abs(display_value)
+                elif account_type.startswith("income"):
+                    total += abs(display_value)
+                else:
+                    total += display_value
+            return child_accounts, total
+
         for partial in partial_lines:
             code = partial["code"]
-            display_balance = partial["balance"] * self._sign_multiplier_for_group_code(code)
+            child_accounts, child_display_total = _sum_child_accounts_display(code)
+            child_debit_total = sum(
+                line.get("debit", line.get("display_debit", 0.0)) for line in child_accounts
+            )
+            child_credit_total = sum(
+                line.get("credit", line.get("display_credit", 0.0))
+                for line in child_accounts
+            )
+            if child_accounts:
+                # If there are visible child accounts, force parent partial line to
+                # be the arithmetic sum of those displayed children.
+                balance = child_display_total
+                display_balance = child_display_total
+                debit = child_debit_total
+                credit = child_credit_total
+            else:
+                balance = partial["balance"]
+                display_balance = (
+                    partial["balance"] * self._sign_multiplier_for_group_code(code)
+                )
+                debit = 0.0
+                credit = 0.0
             line_vals = {
                 "line_type": "group",
                 "code": code,
                 "name": partial["name"],
-                "balance": partial["balance"],
+                "balance": balance,
                 "display_balance": display_balance,
+                "debit": debit,
+                "credit": credit,
+                "display_debit": debit,
+                "display_credit": credit,
                 "is_top_level": True,
                 "level": 0,
                 "account_type": False,
@@ -136,6 +198,15 @@ class BalanceGeneralReport(models.AbstractModel):
                 existing_by_code[code].update(line_vals)
             else:
                 values["lines"].append(line_vals)
+
+        if not wizard.show_result_accounts:
+            values["lines"] = [
+                line
+                for line in values.get("lines", [])
+                if self._get_section_key(line.get("code"), line.get("account_type"))
+                != "estado_resultado"
+            ]
         values["lines"] = sorted(values["lines"], key=lambda line: self._code_sort_key(line["code"]))
+        values["sections"] = self._prepare_sections(values["lines"])
         values["partial_result_lines"] = partial_lines
         return values

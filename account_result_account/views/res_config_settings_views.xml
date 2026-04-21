@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_year_result_account" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.year.result.account</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//setting[.//field[@name='account_discount_income_allocation_id']]" position="after">
+                <setting string="Resultados del ejercicio">
+                    <div class="content-group">
+                        <div class="row mt8">
+                            <label for="year_result_account_id" class="col-lg-5 o_light_label"/>
+                            <field
+                                name="year_result_account_id"
+                                placeholder="Seleccione una cuenta marcada como resultados del ejercicio"
+                            />
+                        </div>
+                    </div>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>

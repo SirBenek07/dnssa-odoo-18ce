@@ -8,13 +8,17 @@
             <xpath expr="//notebook" position="inside">
                 <page string="Resultado" name="result_account_page">
                     <group>
-                        <field name="is_result_account"/>
-                        <field name="is_renta_account" invisible="not is_result_account"/>
+                        <field name="is_year_result_account"/>
+                        <field name="is_result_account" invisible="is_year_result_account"/>
+                        <field
+                            name="is_renta_account"
+                            invisible="is_year_result_account or not is_result_account"
+                        />
                     </group>
                     <field
                         name="result_range_ids"
                         context="{'default_account_id': id}"
-                        invisible="not is_result_account"
+                        invisible="is_year_result_account or not is_result_account"
                     >
                         <list editable="bottom">
                             <field name="sequence" widget="handle"/>

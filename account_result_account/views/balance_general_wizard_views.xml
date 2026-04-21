@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_balance_general_wizard_form_inherit_result_accounts" model="ir.ui.view">
+        <field name="name">balance.general.wizard.form.inherit.result.accounts</field>
+        <field name="model">balance.general.wizard</field>
+        <field name="inherit_id" ref="reportes_financieros.view_balance_general_wizard_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='show_debit_credit_columns']" position="after">
+                <field name="show_result_accounts" />
+            </xpath>
+        </field>
+    </record>
+</odoo>
