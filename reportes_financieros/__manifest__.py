@@ -9,9 +9,12 @@
     "data": [
         "security/ir.model.access.csv",
         "views/balance_general_wizard_views.xml",
+        "views/flujo_caja_wizard_views.xml",
+        "views/account_account_views.xml",
         "report/paperformat.xml",
         "report/report_actions.xml",
         "report/balance_general_templates.xml",
+        "report/flujo_caja_templates.xml",
     ],
     "installable": True,
     "application": False,

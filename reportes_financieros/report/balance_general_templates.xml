@@ -56,47 +56,52 @@
                                 </t>
                                 <div t-att-class="'rf-col ' + ('rf-balance-dc' if show_debit_credit_columns else 'rf-balance')">Saldo</div>
                             </div>
-                            <t t-set="prev_top_prefix" t-value="False" />
-                            <t t-foreach="lines" t-as="line">
-                                <t t-set="current_top_prefix" t-value="(line.get('code') or '').split('.')[0]" />
-                                <t t-if="prev_top_prefix and current_top_prefix and current_top_prefix != prev_top_prefix">
-                                    <div style="height: 6px;" />
-                                </t>
-                                <t t-if="line['line_type'] == 'group' and line['is_top_level']">
-                                    <div class="rf-row" style="border: 2px solid #000; padding: 3px 6px; margin-top: 8px; font-weight: 900;">
-                                        <div class="rf-col rf-code" style="font-size: 14px; font-weight: 900;"><t t-out="line['code']" /></div>
-                                        <div t-att-class="'rf-col ' + ('rf-name-dc' if show_debit_credit_columns else 'rf-name')" t-att-style="'font-size: 14px; font-weight: 900; text-transform: uppercase; padding-left: %spx;' % (line['level'] * 5)"><t t-out="line['name']" /></div>
-                                        <t t-if="show_debit_credit_columns">
-                                            <div class="rf-col rf-debit" style="font-size: 14px; font-weight: 900;">
-                                                <span style="font-size: 12px;" t-out="line['display_debit']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                            <t t-foreach="sections" t-as="section">
+                                <div style="margin-top: 12px; margin-bottom: 6px; border: 1px solid #000; padding: 4px 8px; text-align: center; font-weight: 700; font-size: 12px; text-transform: uppercase;">
+                                    <t t-out="section['title']" />
+                                </div>
+                                <t t-set="prev_top_prefix" t-value="False" />
+                                <t t-foreach="section['lines']" t-as="line">
+                                    <t t-set="current_top_prefix" t-value="line.get('code') and ''.join([c for c in line.get('code') if c.isdigit()][:1]) or False" />
+                                    <t t-if="prev_top_prefix and current_top_prefix and current_top_prefix != prev_top_prefix">
+                                        <div style="height: 6px;" />
+                                    </t>
+                                    <t t-if="line['line_type'] == 'group' and line['is_top_level']">
+                                        <div class="rf-row" style="border: 2px solid #000; padding: 3px 6px; margin-top: 8px; font-weight: 900;">
+                                            <div class="rf-col rf-code" style="font-size: 14px; font-weight: 900;"><t t-out="line['code']" /></div>
+                                            <div t-att-class="'rf-col ' + ('rf-name-dc' if show_debit_credit_columns else 'rf-name')" t-att-style="'font-size: 14px; font-weight: 900; text-transform: uppercase; padding-left: %spx;' % (line['level'] * 5)"><t t-out="line['name']" /></div>
+                                            <t t-if="show_debit_credit_columns">
+                                                <div class="rf-col rf-debit" style="font-size: 14px; font-weight: 900;">
+                                                    <span style="font-size: 12px;" t-out="line['display_debit']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                                </div>
+                                                <div class="rf-col rf-credit" style="font-size: 14px; font-weight: 900;">
+                                                    <span style="font-size: 12px;" t-out="line['display_credit']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                                </div>
+                                            </t>
+                                            <div t-att-class="'rf-col ' + ('rf-balance-dc' if show_debit_credit_columns else 'rf-balance')" style="font-size: 14px; font-weight: 900;">
+                                                <span t-out="line['display_balance']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
                                             </div>
-                                            <div class="rf-col rf-credit" style="font-size: 14px; font-weight: 900;">
-                                                <span style="font-size: 12px;" t-out="line['display_credit']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
-                                            </div>
-                                        </t>
-                                        <div t-att-class="'rf-col ' + ('rf-balance-dc' if show_debit_credit_columns else 'rf-balance')" style="font-size: 14px; font-weight: 900;">
-                                            <span t-out="line['display_balance']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
                                         </div>
-                                    </div>
-                                </t>
-                                <t t-if="not (line['line_type'] == 'group' and line['is_top_level'])">
-                                    <div class="rf-row" t-att-style="'padding: 1px 2px; ' + ('font-weight: 700;' if line['line_type'] == 'group' else '')">
-                                        <div class="rf-col rf-code"><t t-out="line['code']" /></div>
-                                        <div t-att-class="'rf-col ' + ('rf-name-dc' if show_debit_credit_columns else 'rf-name')" t-att-style="'padding-left: %spx;' % (line['level'] * 5)"><t t-out="line['name']" /></div>
-                                        <t t-if="show_debit_credit_columns">
-                                            <div class="rf-col rf-debit">
-                                                <span style="font-size: 9px;" t-out="line['display_debit']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                    </t>
+                                    <t t-if="not (line['line_type'] == 'group' and line['is_top_level'])">
+                                        <div class="rf-row" t-att-style="'padding: 1px 2px; ' + ('font-weight: 700;' if line['line_type'] == 'group' else '')">
+                                            <div class="rf-col rf-code"><t t-out="line['code']" /></div>
+                                            <div t-att-class="'rf-col ' + ('rf-name-dc' if show_debit_credit_columns else 'rf-name')" t-att-style="'padding-left: %spx;' % (line['level'] * 5)"><t t-out="line['name']" /></div>
+                                            <t t-if="show_debit_credit_columns">
+                                                <div class="rf-col rf-debit">
+                                                    <span style="font-size: 9px;" t-out="line['display_debit']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                                </div>
+                                                <div class="rf-col rf-credit">
+                                                    <span style="font-size: 9px;" t-out="line['display_credit']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                                </div>
+                                            </t>
+                                            <div t-att-class="'rf-col ' + ('rf-balance-dc' if show_debit_credit_columns else 'rf-balance')">
+                                                <span t-out="line['display_balance']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
                                             </div>
-                                            <div class="rf-col rf-credit">
-                                                <span style="font-size: 9px;" t-out="line['display_credit']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
-                                            </div>
-                                        </t>
-                                        <div t-att-class="'rf-col ' + ('rf-balance-dc' if show_debit_credit_columns else 'rf-balance')">
-                                            <span t-out="line['display_balance']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
                                         </div>
-                                    </div>
+                                    </t>
+                                    <t t-set="prev_top_prefix" t-value="current_top_prefix" />
                                 </t>
-                                <t t-set="prev_top_prefix" t-value="current_top_prefix" />
                             </t>
 
                             <div style="margin-top: 18px; margin-left: auto; margin-right: auto; width: 52%; border: 1px solid #000; padding: 6px 8px; page-break-inside: avoid; break-inside: avoid; -webkit-column-break-inside: avoid;">

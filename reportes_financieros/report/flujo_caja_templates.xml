@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="flujo_caja_pdf">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.basic_layout">
+                    <div class="page">
+                        <style>
+                            .rf-sheet {
+                                border: 2px solid #1f1f1f;
+                                font-size: 10px;
+                                color: #222;
+                            }
+                            .rf-title {
+                                text-align: center;
+                                font-size: 22px;
+                                font-weight: 800;
+                                padding: 7px 0 4px;
+                                border-bottom: 2px solid #1f1f1f;
+                            }
+                            .rf-subtitle {
+                                text-align: center;
+                                padding: 4px 8px 7px;
+                                font-size: 10px;
+                                color: #4a4a4a;
+                                border-bottom: 1px solid #1f1f1f;
+                            }
+                            .rf-row {
+                                width: 100%;
+                                font-size: 0;
+                                border-bottom: 1px solid #c9d0c9;
+                            }
+                            .rf-col {
+                                display: inline-block;
+                                vertical-align: top;
+                                box-sizing: border-box;
+                                padding: 6px 8px;
+                                font-size: 10px;
+                                white-space: normal;
+                            }
+                            .rf-name {
+                                width: 64%;
+                            }
+                            .rf-amount {
+                                width: 18%;
+                                text-align: right;
+                                font-weight: 700;
+                            }
+                            .rf-side {
+                                width: 18%;
+                                text-align: right;
+                                color: #4c4c4c;
+                            }
+                            .rf-green {
+                                background: #c9efb4;
+                            }
+                            .rf-green-soft {
+                                background: #edf9e3;
+                            }
+                            .rf-yellow {
+                                background: #fff5a8;
+                            }
+                            .rf-yellow-soft {
+                                background: #fffbe0;
+                            }
+                            .rf-dark {
+                                background: #093d33;
+                                color: #fff;
+                            }
+                            .rf-header {
+                                font-weight: 800;
+                                border-top: 2px solid #1f1f1f;
+                                border-bottom: 2px solid #1f1f1f;
+                            }
+                            .rf-section {
+                                font-size: 14px;
+                                font-weight: 800;
+                                padding-top: 10px;
+                                padding-bottom: 10px;
+                                border-top: 2px solid #8ca37f;
+                            }
+                            .rf-line-label {
+                                font-size: 12px;
+                                font-weight: 700;
+                            }
+                            .rf-line-note {
+                                font-size: 9px;
+                                color: #5e5e5e;
+                                margin-top: 2px;
+                            }
+                            .rf-detail {
+                                font-size: 9px;
+                                color: #676767;
+                                padding-left: 20px;
+                            }
+                            .rf-total {
+                                font-weight: 800;
+                                border-top: 2px solid #82957c;
+                            }
+                            .rf-total .rf-line-label {
+                                font-size: 13px;
+                            }
+                            .rf-summary {
+                                margin-top: 16px;
+                                border: 2px solid #1f1f1f;
+                                font-size: 10px;
+                            }
+                            .rf-note {
+                                margin-top: 10px;
+                                font-size: 9px;
+                                color: #4a4a4a;
+                                line-height: 1.4;
+                            }
+                        </style>
+
+                        <div class="rf-sheet">
+                            <div class="rf-title">Flujo de Caja</div>
+                            <div class="rf-subtitle">
+                                <t t-out="company.name" /> | Periodo: <t t-out="period_label" />
+                            </div>
+
+                            <div class="rf-row rf-header rf-green">
+                                <div class="rf-col rf-name">Concepto</div>
+                                <div class="rf-col rf-side">Referencia</div>
+                                <div class="rf-col rf-amount">Importe</div>
+                            </div>
+
+                            <div class="rf-row rf-green">
+                                <div class="rf-col rf-name">
+                                    <div class="rf-line-label">Saldo inicial</div>
+                                </div>
+                                <div class="rf-col rf-side">Inicio</div>
+                                <div class="rf-col rf-amount">
+                                    <span t-out="opening_balance" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                </div>
+                            </div>
+
+                            <div class="rf-row rf-green-soft">
+                                <div class="rf-col rf-name rf-section">Ingresos</div>
+                                <div class="rf-col rf-side"></div>
+                                <div class="rf-col rf-amount"></div>
+                            </div>
+
+                            <t t-foreach="income_lines" t-as="line">
+                                <div class="rf-row rf-green-soft">
+                                    <div class="rf-col rf-name">
+                                        <div class="rf-line-label"><t t-out="line['label']" /></div>
+                                    </div>
+                                    <div class="rf-col rf-side">Entrada</div>
+                                    <div class="rf-col rf-amount">
+                                        <span t-out="line['amount']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                    </div>
+                                </div>
+                            </t>
+
+                            <div class="rf-row rf-green rf-total">
+                                <div class="rf-col rf-name"><div class="rf-line-label">Total ingresos</div></div>
+                                <div class="rf-col rf-side"></div>
+                                <div class="rf-col rf-amount">
+                                    <span t-out="total_income" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                </div>
+                            </div>
+
+                            <div class="rf-row rf-yellow-soft">
+                                <div class="rf-col rf-name rf-section">Gastos</div>
+                                <div class="rf-col rf-side"></div>
+                                <div class="rf-col rf-amount"></div>
+                            </div>
+
+                            <t t-foreach="expense_lines" t-as="line">
+                                <div class="rf-row rf-yellow-soft">
+                                    <div class="rf-col rf-name">
+                                        <div class="rf-line-label"><t t-out="line['label']" /></div>
+                                        <t t-if="show_details">
+                                            <t t-foreach="line['details']" t-as="detail">
+                                                <div class="rf-detail">
+                                                    <t t-out="detail['name']" />:
+                                                    <span t-out="detail['amount']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                                </div>
+                                            </t>
+                                        </t>
+                                    </div>
+                                    <div class="rf-col rf-side">Salida</div>
+                                    <div class="rf-col rf-amount">
+                                        <span t-out="line['amount']" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                    </div>
+                                </div>
+                            </t>
+
+                            <div class="rf-row rf-yellow rf-total">
+                                <div class="rf-col rf-name"><div class="rf-line-label">Total gastos</div></div>
+                                <div class="rf-col rf-side"></div>
+                                <div class="rf-col rf-amount">
+                                    <span t-out="total_expense" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                </div>
+                            </div>
+
+                            <div class="rf-row rf-dark rf-total">
+                                <div class="rf-col rf-name"><div class="rf-line-label">Flujo de caja economico</div></div>
+                                <div class="rf-col rf-side"></div>
+                                <div class="rf-col rf-amount">
+                                    <span t-out="net_change" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                </div>
+                            </div>
+
+                            <div class="rf-row rf-green rf-total">
+                                <div class="rf-col rf-name"><div class="rf-line-label">Saldo final</div></div>
+                                <div class="rf-col rf-side">Cierre</div>
+                                <div class="rf-col rf-amount">
+                                    <span t-out="closing_balance" t-options="{'widget': 'monetary', 'display_currency': currency}" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rf-summary">
+                            <div class="rf-row rf-header rf-green">
+                                <div class="rf-col rf-name">Resumen ejecutivo</div>
+                                <div class="rf-col rf-side"></div>
+                                <div class="rf-col rf-amount"></div>
+                            </div>
+                            <div class="rf-row">
+                                <div class="rf-col rf-name"><t t-out="main_message" /></div>
+                                <div class="rf-col rf-side"></div>
+                                <div class="rf-col rf-amount"></div>
+                            </div>
+                        </div>
+
+                        <t t-if="cash_accounts">
+                            <div class="rf-note">
+                                <strong>Cuentas consideradas como efectivo:</strong>
+                                <t t-foreach="cash_accounts" t-as="account">
+                                    <span t-out="account.code" /> - <span t-out="account.name" /><t t-if="not account_last">; </t>
+                                </t>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

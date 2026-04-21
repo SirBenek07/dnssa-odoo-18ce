@@ -2,9 +2,9 @@ from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
 
-class BalanceGeneralWizard(models.TransientModel):
-    _name = "balance.general.wizard"
-    _description = "Wizard Balance General"
+class FlujoCajaWizard(models.TransientModel):
+    _name = "flujo.caja.wizard"
+    _description = "Wizard Flujo de Caja"
 
     company_id = fields.Many2one(
         comodel_name="res.company",
@@ -23,12 +23,12 @@ class BalanceGeneralWizard(models.TransientModel):
         required=True,
         default=fields.Date.context_today,
     )
-    show_accounts_without_moves = fields.Boolean(
-        string="Mostrar cuentas sin movimientos",
-        default=False,
+    show_details = fields.Boolean(
+        string="Mostrar detalle por cuenta",
+        default=True,
     )
-    show_debit_credit_columns = fields.Boolean(
-        string="Mostrar Debito y Credito",
+    include_zero_lines = fields.Boolean(
+        string="Mostrar lineas con importe cero",
         default=False,
     )
 
@@ -37,17 +37,6 @@ class BalanceGeneralWizard(models.TransientModel):
         if self.date_range_id:
             self.date_from = self.date_range_id.date_start
             self.date_to = self.date_range_id.date_end
-
-    @api.onchange("date_from", "date_to")
-    def _onchange_manual_dates(self):
-        if (
-            self.date_range_id
-            and (
-                self.date_from != self.date_range_id.date_start
-                or self.date_to != self.date_range_id.date_end
-            )
-        ):
-            self.date_range_id = False
 
     @api.onchange("company_id")
     def _onchange_company_id(self):
@@ -78,8 +67,26 @@ class BalanceGeneralWizard(models.TransientModel):
                     _("La empresa del periodo debe coincidir con la empresa del reporte.")
                 )
 
+    def _has_cash_accounts(self):
+        self.ensure_one()
+        return bool(
+            self.env["account.account"].search_count(
+                [
+                    ("company_ids", "in", [self.company_id.id]),
+                    ("account_type", "=", "asset_cash"),
+                    ("deprecated", "=", False),
+                ]
+            )
+        )
+
     def action_print_pdf(self):
         self.ensure_one()
+        if not self._has_cash_accounts():
+            raise ValidationError(
+                _(
+                    "La empresa no tiene cuentas configuradas con tipo 'Banco y Efectivo'."
+                )
+            )
         return self.env.ref(
-            "reportes_financieros.action_report_balance_general"
+            "reportes_financieros.action_report_flujo_caja"
         ).report_action(self, data={"wizard_id": self.id})

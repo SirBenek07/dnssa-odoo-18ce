@@ -9,6 +9,10 @@ class BalanceGeneralReport(models.AbstractModel):
     _name = "report.reportes_financieros.balance_general_pdf"
     _description = "Reporte PDF Balance General"
 
+    def _extract_top_code(self, code):
+        match = re.search(r"\d+", code or "")
+        return match.group(0).lstrip("0") or (match.group(0) if match else "")
+
     def _code_sort_key(self, code):
         parts = re.split(r"(\d+)", code or "")
         key = []
@@ -36,7 +40,7 @@ class BalanceGeneralReport(models.AbstractModel):
         return 1
 
     def _sign_multiplier_for_group_code(self, code):
-        top_code = (code or "").split(".")[0]
+        top_code = self._extract_top_code(code)
         if top_code in {"2", "3", "4"}:
             return -1
         return 1
@@ -45,6 +49,19 @@ class BalanceGeneralReport(models.AbstractModel):
         if not account_code or not group_code:
             return False
         return account_code == group_code or account_code.startswith(group_code + ".")
+
+    def _get_section_key(self, code, account_type=None):
+        if account_type:
+            if account_type.startswith("asset") or account_type.startswith(
+                "liability"
+            ) or account_type.startswith("equity"):
+                return "balance_general"
+            if account_type.startswith("income") or account_type.startswith("expense"):
+                return "estado_resultado"
+        top_code = self._extract_top_code(code)
+        if top_code in {"1", "2", "3"}:
+            return "balance_general"
+        return "estado_resultado"
 
     def _get_last_closing_date(self, company, date_to):
         # Prefer real lock dates configured in Odoo accounting settings.
@@ -60,7 +77,7 @@ class BalanceGeneralReport(models.AbstractModel):
 
     def _get_provisional_result(self, wizard):
         last_closing_date = self._get_last_closing_date(wizard.company_id, wizard.date_to)
-        provisional_from = max(wizard.date_from, last_closing_date + timedelta(days=1))
+        provisional_from = wizard.date_from
         provisional_to = wizard.date_to
 
         domain = [
@@ -246,10 +263,27 @@ class BalanceGeneralReport(models.AbstractModel):
             "resultado": provisional["resultado"],
         }
 
-    def _inject_provisional_into_resultado_ejercicio(self, lines, provisional_result, wizard):
-        target_code = "3.03.02"
+    def _get_year_result_account(self, wizard):
+        account = getattr(wizard.company_id, "year_result_account_id", False)
+        if account:
+            return account
+        return self.env["account.account"].search(
+            [
+                ("company_ids", "in", [wizard.company_id.id]),
+                ("is_year_result_account", "=", True),
+            ],
+            limit=1,
+        )
+
+    def _inject_provisional_into_resultado_ejercicio(self, lines, provisional, wizard):
+        target_account = self._get_year_result_account(wizard)
+        target_code = target_account.code if target_account else "3.03.02"
+        target_name = target_account.name if target_account else "RESULTADO DEL EJERCICIO"
+        target_account_type = (
+            target_account.account_type if target_account else "equity_unaffected"
+        )
         # Convert P&L result (income-expense) into equity-normalized raw balance.
-        raw_result_delta = -provisional_result
+        raw_result_delta = -provisional["resultado"]
         target_line = next(
             (
                 line
@@ -259,26 +293,23 @@ class BalanceGeneralReport(models.AbstractModel):
             None,
         )
         if target_line is None:
-            account_result = self.env["account.account"].search(
-                [
-                    ("code", "=", target_code),
-                    ("company_ids", "in", [wizard.company_id.id]),
-                ],
-                limit=1,
-            )
             target_line = {
                 "line_type": "account",
                 "code": target_code,
-                "name": account_result.name if account_result else "RESULTADO DEL EJERCICIO",
+                "name": target_name,
                 "balance": 0.0,
                 "is_top_level": False,
                 "level": target_code.count("."),
-                "account_type": account_result.account_type if account_result else "equity",
+                "account_type": target_account_type,
+                "debit": 0.0,
+                "credit": 0.0,
             }
             lines.append(target_line)
 
         if target_line:
             target_line["balance"] = target_line.get("balance", 0.0) + raw_result_delta
+            target_line["debit"] = provisional["total_egreso"]
+            target_line["credit"] = provisional["total_ingreso"]
             # Ensure parent groups (e.g. 3.03) exist so hierarchy is complete.
             parent_codes = []
             code_parts = target_code.split(".")
@@ -326,6 +357,46 @@ class BalanceGeneralReport(models.AbstractModel):
             line["display_debit"] = line.get("debit", 0.0)
             line["display_credit"] = line.get("credit", 0.0)
 
+    def _sync_group_display_with_children(self, lines):
+        account_lines = [
+            line
+            for line in lines
+            if line.get("line_type") == "account" and line.get("code")
+        ]
+        for group_line in lines:
+            if group_line.get("line_type") != "group" or not group_line.get("code"):
+                continue
+            prefix = f"{group_line['code']}."
+            child_lines = [
+                line for line in account_lines if str(line.get("code")).startswith(prefix)
+            ]
+            if not child_lines:
+                continue
+            child_total = sum(line.get("display_balance", 0.0) for line in child_lines)
+            group_line["display_balance"] = child_total
+            mult = self._sign_multiplier_for_group_code(group_line.get("code"))
+            group_line["balance"] = child_total / mult if mult else child_total
+
+    def _prepare_sections(self, lines):
+        sections = {
+            "balance_general": {
+                "key": "balance_general",
+                "title": "Balance General",
+                "lines": [],
+            },
+            "estado_resultado": {
+                "key": "estado_resultado",
+                "title": "Estado de Resultado",
+                "lines": [],
+            },
+        }
+        for line in lines:
+            section_key = self._get_section_key(
+                line.get("code"), line.get("account_type")
+            )
+            sections[section_key]["lines"].append(line)
+        return [section for section in sections.values() if section["lines"]]
+
     @api.model
     def _get_report_values(self, docids, data=None):
         data = data or {}
@@ -341,12 +412,14 @@ class BalanceGeneralReport(models.AbstractModel):
         lines, visible_accounts, account_balance_map = self._prepare_lines(wizard)
         provisional = self._get_provisional_result(wizard)
         self._inject_provisional_into_resultado_ejercicio(
-            lines, provisional["resultado"], wizard
+            lines, provisional, wizard
         )
         lines.sort(key=lambda line: self._code_sort_key(line["code"]))
         self._apply_display_sign(lines)
+        self._sync_group_display_with_children(lines)
 
         summary = self._prepare_summary(lines, provisional)
+        sections = self._prepare_sections(lines)
 
         return {
             "doc_ids": wizard.ids,
@@ -356,6 +429,7 @@ class BalanceGeneralReport(models.AbstractModel):
             "currency": wizard.company_id.currency_id,
             "period_label": period_label,
             "lines": lines,
+            "sections": sections,
             "summary": summary,
             "show_debit_credit_columns": wizard.show_debit_credit_columns,
         }

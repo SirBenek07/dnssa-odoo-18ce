@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_account_form_flujo_caja" model="ir.ui.view">
+        <field name="name">account.account.form.flujo.caja</field>
+        <field name="model">account.account</field>
+        <field name="inherit_id" ref="account.view_account_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="cash_flow" string="Flujo de caja">
+                    <group>
+                        <group>
+                            <field name="include_in_cash_flow" />
+                        </group>
+                        <group invisible="not include_in_cash_flow">
+                            <field name="cash_flow_display_name" placeholder="Ej. Pago electricidad o Venta POS contado" />
+                            <field name="cash_flow_credit_behavior" />
+                            <field name="cash_flow_debit_behavior" />
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_account_list_flujo_caja" model="ir.ui.view">
+        <field name="name">account.account.list.flujo.caja</field>
+        <field name="model">account.account</field>
+        <field name="inherit_id" ref="account.view_account_list" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='allowed_journal_ids']" position="after">
+                <field name="include_in_cash_flow" optional="hide" />
+                <field name="cash_flow_display_name" optional="hide" />
+            </xpath>
+        </field>
+    </record>
+</odoo>
