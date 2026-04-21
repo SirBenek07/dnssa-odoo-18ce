@@ -18,11 +18,28 @@ class AccountMoveLine(models.Model):
         domain="[('parent_id', '=', False), ('is_closed', '=', False), ('active', '=', True), ('display_in_project', '=', True), ('is_template_project', '=', False), ('is_task_template', '=', False)]",
     )
 
+    @api.model
+    def _get_project_analytic_distribution(self, project):
+        if not project:
+            return False
+        if hasattr(project, "_get_analytic_distribution"):
+            return project._get_analytic_distribution() or False
+        if project.account_id:
+            return {project.account_id.id: 100}
+        return False
+
+    def _sync_analytic_distribution_from_project(self):
+        for line in self:
+            line.analytic_distribution = (
+                line._get_project_analytic_distribution(line.project_id) or False
+            )
+
     @api.onchange("move_id")
     def _onchange_move_id_set_project(self):
         for line in self:
             if not line.project_id and line.move_id and line.move_id.project_id:
                 line.project_id = line.move_id.project_id
+                line._sync_analytic_distribution_from_project()
 
     @api.onchange("task_id")
     def _onchange_task_id_set_project(self):
@@ -39,12 +56,19 @@ class AccountMoveLine(models.Model):
                 and line.task_id.is_task_template
             ):
                 line.task_id = False
+            if line.project_id:
+                line._sync_analytic_distribution_from_project()
 
     @api.onchange("project_id")
     def _onchange_project_id_clear_task_if_mismatch(self):
         for line in self:
-            if line.project_id and line.task_id and line.task_id.project_id != line.project_id:
+            if (
+                line.project_id
+                and line.task_id
+                and line.task_id.project_id != line.project_id
+            ):
                 line.task_id = False
+            line._sync_analytic_distribution_from_project()
 
     @api.constrains("project_id", "task_id")
     def _check_project_task_consistency(self):
@@ -111,8 +135,18 @@ class AccountMoveLine(models.Model):
     def create(self, vals_list):
         for vals in vals_list:
             if vals.get("project_id") or not vals.get("move_id"):
-                continue
-            move = self.env["account.move"].browse(vals["move_id"])
-            if move.project_id:
-                vals["project_id"] = move.project_id.id
+                project = (
+                    self.env["project.project"].browse(vals["project_id"])
+                    if vals.get("project_id")
+                    else False
+                )
+            else:
+                move = self.env["account.move"].browse(vals["move_id"])
+                project = move.project_id
+                if project:
+                    vals["project_id"] = project.id
+            if "analytic_distribution" not in vals and project:
+                vals["analytic_distribution"] = (
+                    self._get_project_analytic_distribution(project) or False
+                )
         return super().create(vals_list)

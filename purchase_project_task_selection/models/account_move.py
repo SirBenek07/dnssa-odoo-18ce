@@ -21,3 +21,4 @@ class AccountMove(models.Model):
                 line.project_id = move.project_id
                 if line.task_id and line.task_id.project_id != move.project_id:
                     line.task_id = False
+                line._sync_analytic_distribution_from_project()
