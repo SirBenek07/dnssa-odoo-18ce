@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_template_form_view_sale_invoice_button" model="ir.ui.view">
+        <field name="name">product.template.sale.invoice.button</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="sale.product_template_form_view_sale_order_button"/>
+        <field name="arch" type="xml">
+            <button name="action_view_sales" position="replace">
+                <button class="oe_stat_button"
+                    name="action_view_customer_invoices"
+                    type="object"
+                    icon="fa-file-text-o"
+                    help="Facturado en venta en los ultimos 365 dias"
+                    groups="account.group_account_invoice,account.group_account_readonly"
+                    invisible="not sale_ok">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value d-flex gap-1">
+                            <field name="sale_invoiced_qty" widget="statinfo" nolabel="1" class="oe_inline"/>
+                            <field name="uom_name" class="oe_inline" groups="uom.group_uom"/>
+                        </span>
+                        <span class="o_stat_text">Facturado Venta</span>
+                    </div>
+                </button>
+            </button>
+        </field>
+    </record>
+
+    <record id="product_form_view_sale_invoice_button" model="ir.ui.view">
+        <field name="name">product.product.sale.invoice.button</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="sale.product_form_view_sale_order_button"/>
+        <field name="arch" type="xml">
+            <button name="action_view_sales" position="replace">
+                <button class="oe_stat_button"
+                    name="action_view_customer_invoices"
+                    type="object"
+                    icon="fa-file-text-o"
+                    help="Facturado en venta en los ultimos 365 dias"
+                    groups="account.group_account_invoice,account.group_account_readonly"
+                    invisible="not sale_ok">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value d-flex gap-1">
+                            <field name="sale_invoiced_qty" widget="statinfo" nolabel="1" class="oe_inline"/>
+                            <field name="uom_name" class="oe_inline" groups="uom.group_uom"/>
+                        </span>
+                        <span class="o_stat_text">Facturado Venta</span>
+                    </div>
+                </button>
+            </button>
+        </field>
+    </record>
+
+    <record id="product_template_form_view_purchase_invoice_button" model="ir.ui.view">
+        <field name="name">product.template.purchase.invoice.button</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="purchase.view_product_template_purchase_buttons_from"/>
+        <field name="arch" type="xml">
+            <button name="action_view_po" position="replace">
+                <button class="oe_stat_button"
+                    name="action_view_vendor_bills"
+                    type="object"
+                    icon="fa-pencil-square-o"
+                    help="Facturado en compra en los ultimos 365 dias"
+                    groups="account.group_account_invoice,account.group_account_readonly"
+                    invisible="not purchase_ok">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value d-flex gap-1">
+                            <field name="purchase_invoiced_qty" widget="statinfo" nolabel="1" class="oe_inline"/>
+                            <field name="uom_name" class="oe_inline" groups="uom.group_uom"/>
+                        </span>
+                        <span class="o_stat_text">Facturado Compra</span>
+                    </div>
+                </button>
+            </button>
+        </field>
+    </record>
+
+    <record id="product_form_view_purchase_invoice_button" model="ir.ui.view">
+        <field name="name">product.product.purchase.invoice.button</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="purchase.product_normal_form_view_inherit_purchase"/>
+        <field name="arch" type="xml">
+            <button name="action_view_po" position="replace">
+                <button class="oe_stat_button"
+                    name="action_view_vendor_bills"
+                    type="object"
+                    icon="fa-pencil-square-o"
+                    help="Facturado en compra en los ultimos 365 dias"
+                    groups="account.group_account_invoice,account.group_account_readonly"
+                    invisible="not purchase_ok">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value d-flex gap-1">
+                            <field name="purchase_invoiced_qty" widget="statinfo" nolabel="1" class="oe_inline"/>
+                            <field name="uom_name" class="oe_inline" groups="uom.group_uom"/>
+                        </span>
+                        <span class="o_stat_text">Facturado Compra</span>
+                    </div>
+                </button>
+            </button>
+        </field>
+    </record>
+</odoo>
