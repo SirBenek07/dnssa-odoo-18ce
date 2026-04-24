@@ -3,17 +3,26 @@
     <record id="res_config_settings_view_form_employee_company_spend_refund" model="ir.ui.view">
         <field name="name">res.config.settings.view.form.employee.company.spend.refund</field>
         <field name="model">res.config.settings</field>
-        <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+        <field name="inherit_id" ref="hr_expense.res_config_settings_view_form"/>
         <field name="arch" type="xml">
-            <block id="analytic" position="inside">
+            <xpath expr="//app[@name='hr_expense']/block[setting/field[@name='expense_journal_id']]" position="inside">
+                <setting
+                    id="employee_company_spend_refund_default"
+                    string="Gasto de empresa pagado por empleado"
+                    company_dependent="1"
+                    help="Activa este flujo por defecto en gastos nuevos."
+                >
+                    <field name="company_spend_refund_default"/>
+                </setting>
                 <setting
                     id="employee_company_spend_refund_account"
                     string="Cuenta de reembolso a empleados"
+                    company_dependent="1"
                     help="Cuenta opcional de pasivo usada para reclasificar gastos de la empresa pagados por empleados."
                 >
                     <field name="employee_spend_refund_account_id"/>
                 </setting>
-            </block>
+            </xpath>
         </field>
     </record>
 </odoo>

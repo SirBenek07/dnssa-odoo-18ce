@@ -17,6 +17,7 @@ class TestAccountMoveProjectTaskSelection(AccountTestInvoicingCommon):
             {"name": "Proyecto A", "account_id": cls.analytic_account_a.id}
         )
         cls.project_b = cls.env["project.project"].create({"name": "Proyecto B"})
+        cls.project_b.account_id = False
         cls.task_a = cls.env["project.task"].create(
             {"name": "Tarea A", "project_id": cls.project_a.id}
         )
@@ -123,4 +124,37 @@ class TestAccountMoveProjectTaskSelection(AccountTestInvoicingCommon):
         )
         line.project_id = self.project_b
         line._onchange_project_id_clear_task_if_mismatch()
+        self.assertFalse(line.analytic_distribution)
+
+    def test_create_payment_term_line_does_not_receive_project_analytic(self):
+        move = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner_a.id,
+                "journal_id": self.company_data["default_journal_sale"].id,
+                "project_id": self.project_a.id,
+            }
+        )
+        lines = self.env["account.move.line"].create(
+            [
+                {
+                    "move_id": move.id,
+                    "name": "CxC",
+                    "account_id": self.partner_a.property_account_receivable_id.id,
+                    "debit": 100.0,
+                    "credit": 0.0,
+                },
+                {
+                    "move_id": move.id,
+                    "name": "Ingreso",
+                    "account_id": self.product_a.property_account_income_id.id,
+                    "debit": 0.0,
+                    "credit": 100.0,
+                },
+            ]
+        )
+        line = lines.filtered(
+            lambda l: l.account_id.account_type == "asset_receivable"
+        )
+        self.assertFalse(line.project_id)
         self.assertFalse(line.analytic_distribution)

@@ -8,9 +8,18 @@ class HrExpense(models.Model):
 
     is_company_spend_refund = fields.Boolean(
         string="Gasto de empresa pagado por empleado",
+        default=lambda self: self.env.company.company_spend_refund_default,
         help="Vincula una factura de proveedor existente y transfiere su saldo "
         "pendiente a una deuda de reembolso con el empleado.",
         tracking=True,
+    )
+    employee_spend_refund_account_id = fields.Many2one(
+        comodel_name="account.account",
+        string="Cuenta de pasivo de reembolso",
+        default=lambda self: self.env.company.employee_spend_refund_account_id,
+        domain="[('account_type', '=', 'liability_payable'), ('deprecated', '=', False), ('company_ids', 'parent_of', company_id)]",
+        check_company=True,
+        help="Cuenta por pagar usada para registrar la deuda de la empresa con el empleado.",
     )
     company_vendor_bill_id = fields.Many2one(
         comodel_name="account.move",
@@ -58,11 +67,24 @@ class HrExpense(models.Model):
                     _("La factura de proveedor debe estar pendiente (No pagada o Parcialmente pagada).")
                 )
             if (
+                expense.employee_spend_refund_account_id
+                and expense.employee_spend_refund_account_id.account_type != "liability_payable"
+            ):
+                raise ValidationError(
+                    _("La cuenta de reembolso al empleado debe ser una cuenta por pagar.")
+                )
+            if (
                 expense.vendor_id
                 and expense.company_vendor_bill_id.partner_id
                 and expense.vendor_id != expense.company_vendor_bill_id.partner_id
             ):
                 raise ValidationError(_("El proveedor debe coincidir con la factura seleccionada."))
+
+    @api.depends("product_id", "company_id", "is_company_spend_refund")
+    def _compute_account_id(self):
+        company_refund_expenses = self.filtered("is_company_spend_refund")
+        company_refund_expenses.account_id = False
+        super(HrExpense, self - company_refund_expenses)._compute_account_id()
 
     @api.constrains("is_company_spend_refund", "company_vendor_bill_id")
     def _check_company_spend_refund_no_duplicate_bill(self):
@@ -94,19 +116,39 @@ class HrExpense(models.Model):
                 expense.payment_mode = "own_account"
                 expense.product_id = False
                 expense.product_uom_id = False
+                expense.account_id = False
+                expense.analytic_distribution = False
+                expense.parent_task_id = False
+                expense.employee_spend_refund_account_id = (
+                    expense.company_id.employee_spend_refund_account_id
+                    or expense.employee_spend_refund_account_id
+                )
             else:
                 expense.company_vendor_bill_id = False
+                expense.employee_spend_refund_account_id = False
+
+    @api.onchange("company_id")
+    def _onchange_company_spend_refund_company_id(self):
+        for expense in self.filtered("is_company_spend_refund"):
+            expense.employee_spend_refund_account_id = (
+                expense.company_id.employee_spend_refund_account_id
+            )
 
     @api.onchange("payment_mode")
     def _onchange_payment_mode_company_spend_refund(self):
         for expense in self.filtered(lambda e: e.payment_mode != "own_account"):
             expense.is_company_spend_refund = False
             expense.company_vendor_bill_id = False
+            expense.employee_spend_refund_account_id = False
 
     @api.onchange("company_vendor_bill_id")
     def _onchange_company_vendor_bill_id(self):
         for expense in self.filtered(lambda e: e.is_company_spend_refund and e.company_vendor_bill_id):
             expense.vendor_id = expense.company_vendor_bill_id.partner_id
+            expense.employee_spend_refund_account_id = (
+                expense.employee_spend_refund_account_id
+                or expense.company_id.employee_spend_refund_account_id
+            )
             if expense.company_vendor_bill_id.currency_id:
                 expense.currency_id = expense.company_vendor_bill_id.currency_id
             expense.total_amount_currency = expense.company_vendor_bill_id.amount_residual
@@ -140,7 +182,8 @@ class HrExpense(models.Model):
     def _get_company_spend_refund_account(self, partner):
         self.ensure_one()
         return (
-            self.company_id.employee_spend_refund_account_id
+            self.employee_spend_refund_account_id
+            or self.company_id.employee_spend_refund_account_id
             or partner.property_account_payable_id
             or partner.parent_id.property_account_payable_id
         )

@@ -54,7 +54,27 @@
                     invisible="not is_company_spend_refund"
                     required="is_company_spend_refund"
                 />
+                <field
+                    name="employee_spend_refund_account_id"
+                    readonly="sheet_id"
+                    invisible="not is_company_spend_refund"
+                    required="is_company_spend_refund"
+                    options="{'no_create': True}"
+                    context="{'default_company_id': company_id}"
+                />
                 <field name="company_reclass_move_id" readonly="1" invisible="not company_reclass_move_id"/>
+            </xpath>
+
+            <xpath expr="//field[@name='account_id']" position="attributes">
+                <attribute name="invisible">is_company_spend_refund</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='analytic_distribution']" position="attributes">
+                <attribute name="invisible">is_company_spend_refund</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='parent_task_id']" position="attributes">
+                <attribute name="invisible">is_company_spend_refund</attribute>
             </xpath>
         </field>
     </record>
@@ -70,6 +90,7 @@
 
             <xpath expr="//field[@name='expense_line_ids']/list/field[@name='vendor_id']" position="after">
                 <field name="company_vendor_bill_id" optional="show"/>
+                <field name="employee_spend_refund_account_id" optional="show"/>
                 <field name="is_company_spend_refund" optional="hide"/>
             </xpath>
         </field>

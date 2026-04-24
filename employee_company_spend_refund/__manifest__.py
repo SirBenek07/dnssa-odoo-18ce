@@ -5,7 +5,7 @@
     "category": "Human Resources/Expenses",
     "author": "Federico Fernandez",
     "license": "AGPL-3",
-    "depends": ["hr_expense", "account"],
+    "depends": ["hr_expense", "account", "purchase_project_task_selection"],
     "data": [
         "views/hr_expense_views.xml",
         "views/res_config_settings_views.xml",

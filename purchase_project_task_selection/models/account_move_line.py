@@ -28,16 +28,50 @@ class AccountMoveLine(models.Model):
             return {project.account_id.id: 100}
         return False
 
+    @api.model
+    def _is_project_analytic_applicable_vals(self, vals, move=False):
+        move = move or (
+            self.env["account.move"].browse(vals["move_id"]) if vals.get("move_id") else False
+        )
+        if not move or not move.is_invoice(include_receipts=True):
+            return False
+        if vals.get("display_type") and vals["display_type"] != "product":
+            return False
+        if vals.get("tax_line_id"):
+            return False
+        account = self.env["account.account"].browse(vals["account_id"]) if vals.get("account_id") else False
+        if account and account.account_type in ("asset_receivable", "liability_payable"):
+            return False
+        return True
+
+    def _is_project_analytic_applicable(self):
+        self.ensure_one()
+        if not self.move_id or not self.move_id.is_invoice(include_receipts=True):
+            return False
+        if self.display_type and self.display_type != "product":
+            return False
+        if self.tax_line_id:
+            return False
+        if self.account_id.account_type in ("asset_receivable", "liability_payable"):
+            return False
+        return True
+
     def _sync_analytic_distribution_from_project(self):
         for line in self:
-            line.analytic_distribution = (
-                line._get_project_analytic_distribution(line.project_id) or False
-            )
+            if line._is_project_analytic_applicable():
+                line.analytic_distribution = (
+                    line._get_project_analytic_distribution(line.project_id) or False
+                )
 
     @api.onchange("move_id")
     def _onchange_move_id_set_project(self):
         for line in self:
-            if not line.project_id and line.move_id and line.move_id.project_id:
+            if (
+                not line.project_id
+                and line.move_id
+                and line.move_id.project_id
+                and line._is_project_analytic_applicable()
+            ):
                 line.project_id = line.move_id.project_id
                 line._sync_analytic_distribution_from_project()
 
@@ -134,6 +168,9 @@ class AccountMoveLine(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
+            move = self.env["account.move"].browse(vals["move_id"]) if vals.get("move_id") else False
+            if not self._is_project_analytic_applicable_vals(vals, move=move):
+                continue
             if vals.get("project_id") or not vals.get("move_id"):
                 project = (
                     self.env["project.project"].browse(vals["project_id"])
@@ -141,7 +178,6 @@ class AccountMoveLine(models.Model):
                     else False
                 )
             else:
-                move = self.env["account.move"].browse(vals["move_id"])
                 project = move.project_id
                 if project:
                     vals["project_id"] = project.id
