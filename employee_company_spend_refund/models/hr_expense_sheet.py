@@ -25,17 +25,23 @@ class HrExpenseSheet(models.Model):
                 continue
 
             payable_lines = posted_moves.line_ids.filtered(
-                lambda line: line.account_id.account_type == "liability_payable"
+                lambda line: (
+                    line.account_id.account_type == "liability_payable"
+                    and not line.reconciled
+                    and not (line.currency_id or line.company_currency_id).is_zero(
+                        line.amount_residual_currency if line.currency_id else line.amount_residual
+                    )
+                )
             )
-            residual = sum(payable_lines.mapped("amount_residual"))
+            residual = abs(sum(payable_lines.mapped("amount_residual")))
             sheet.amount_residual = residual
 
-            if not payable_lines:
-                sheet.payment_state = "not_paid"
-            elif sheet.company_currency_id.is_zero(residual):
+            if sheet.company_currency_id.is_zero(residual):
                 sheet.payment_state = "paid"
-            else:
+            elif sheet.company_currency_id.compare_amounts(residual, sheet.total_amount) < 0:
                 sheet.payment_state = "partial"
+            else:
+                sheet.payment_state = "not_paid"
 
     @api.constrains("expense_line_ids")
     def _check_company_spend_refund_expense_mix(self):
