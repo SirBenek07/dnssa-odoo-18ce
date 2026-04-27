@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_balance_general_wizard_form_project_filter" model="ir.ui.view">
+        <field name="name">balance.general.wizard.form.project.filter</field>
+        <field name="model">balance.general.wizard</field>
+        <field name="inherit_id" ref="reportes_financieros.view_balance_general_wizard_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='show_debit_credit_columns']" position="after">
+                <field
+                    name="project_ids"
+                    widget="many2many_tags"
+                    options="{'no_create': True}"
+                    domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]"
+                    placeholder="Todos los proyectos"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>
