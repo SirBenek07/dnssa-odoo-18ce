@@ -95,4 +95,25 @@
             </xpath>
         </field>
     </record>
+
+    <record id="hr_expense.hr_expense_actions_my_all" model="ir.actions.act_window">
+        <field name="context">{}</field>
+    </record>
+
+    <record id="hr_expense_view_search_company_spend_refund_dashboard" model="ir.ui.view">
+        <field name="name">hr.expense.search.company.spend.refund.dashboard</field>
+        <field name="model">hr.expense</field>
+        <field name="inherit_id" ref="hr_expense.hr_expense_view_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='to_submit']" position="attributes">
+                <attribute name="domain">[('state', 'in', ('draft', 'reported'))]</attribute>
+            </xpath>
+            <xpath expr="//filter[@name='submitted']" position="attributes">
+                <attribute name="domain">[('state', '=', 'submitted')]</attribute>
+            </xpath>
+            <xpath expr="//filter[@name='approved']" position="attributes">
+                <attribute name="domain">[('state', '=', 'approved'), ('payment_mode', '=', 'own_account')]</attribute>
+            </xpath>
+        </field>
+    </record>
 </odoo>

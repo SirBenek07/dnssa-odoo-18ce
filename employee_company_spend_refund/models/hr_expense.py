@@ -167,6 +167,54 @@ class HrExpense(models.Model):
             )
         return self.company_reclass_move_id.get_formview_action()
 
+    @api.model
+    def get_expense_dashboard(self):
+        expense_state = {
+            "to_submit": {
+                "description": _("to submit"),
+                "amount": 0.0,
+                "currency": self.env.company.currency_id.id,
+            },
+            "submitted": {
+                "description": _("under validation"),
+                "amount": 0.0,
+                "currency": self.env.company.currency_id.id,
+            },
+            "approved": {
+                "description": _("to be reimbursed"),
+                "amount": 0.0,
+                "currency": self.env.company.currency_id.id,
+            },
+        }
+
+        user = self.env.user
+        is_expense_approver = (
+            user.has_group("hr_expense.group_hr_expense_team_approver")
+            or user.has_group("hr_expense.group_hr_expense_user")
+            or user.has_group("hr_expense.group_hr_expense_manager")
+            or user.has_group("account.group_account_user")
+        )
+        domain = [
+            "|",
+            "&",
+            ("payment_mode", "in", ("own_account", "company_account")),
+            ("state", "in", ("draft", "reported", "submitted")),
+            "&",
+            ("payment_mode", "=", "own_account"),
+            ("state", "=", "approved"),
+        ]
+        if not is_expense_approver:
+            if not user.employee_ids:
+                return expense_state
+            domain = [("employee_id", "in", user.employee_ids.ids)] + domain
+
+        expenses = self._read_group(domain, ["state"], ["total_amount:sum"])
+        for state, total_amount_sum in expenses:
+            if state in {"draft", "reported"}:
+                state = "to_submit"
+            expense_state[state]["amount"] += total_amount_sum
+        return expense_state
+
     def _get_company_spend_refund_partner(self):
         self.ensure_one()
         partner = self.employee_id.sudo().work_contact_id.with_company(self.company_id)
