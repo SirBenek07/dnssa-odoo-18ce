@@ -11,6 +11,10 @@ class AccountMove(models.Model):
         domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]",
         copy=False,
     )
+    concepto = fields.Text(
+        string="Concepto",
+        copy=False,
+    )
 
     @api.onchange("project_id")
     def _onchange_project_id_set_lines_project(self):
