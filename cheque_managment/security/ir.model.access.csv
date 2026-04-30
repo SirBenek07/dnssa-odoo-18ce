@@ -1,3 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_account_cheque_user,access.account.cheque.user,model_account_cheque,account.group_account_user,1,1,1,1
 access_account_cheque_readonly,access.account.cheque.readonly,model_account_cheque,account.group_account_readonly,1,0,0,0
+access_account_transfer_performed_user,access.account.transfer.performed.user,model_account_transfer_performed,account.group_account_user,1,1,1,1
+access_account_transfer_performed_readonly,access.account.transfer.performed.readonly,model_account_transfer_performed,account.group_account_readonly,1,0,0,0

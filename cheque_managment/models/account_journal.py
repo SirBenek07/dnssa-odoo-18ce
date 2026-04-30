@@ -12,6 +12,10 @@ class AccountJournal(models.Model):
         string="Cheques",
         compute="_compute_cheque_count",
     )
+    transfer_count = fields.Integer(
+        string="Transferencias",
+        compute="_compute_transfer_count",
+    )
 
     def _get_dns_cheque_payment_method(self):
         return self.env.ref(
@@ -77,6 +81,19 @@ class AccountJournal(models.Model):
         for journal in self:
             journal.cheque_count = counts.get(journal.id, 0)
 
+    @api.depends("type")
+    def _compute_transfer_count(self):
+        counts = {}
+        if self.ids:
+            data = self.env["account.transfer.performed"].read_group(
+                [("journal_id", "in", self.ids)],
+                ["journal_id"],
+                ["journal_id"],
+            )
+            counts = {item["journal_id"][0]: item["journal_id_count"] for item in data}
+        for journal in self:
+            journal.transfer_count = counts.get(journal.id, 0)
+
     def action_open_cheques(self):
         self.ensure_one()
         action = self.env["ir.actions.actions"]._for_xml_id(
@@ -88,6 +105,22 @@ class AccountJournal(models.Model):
             {
                 "default_journal_id": self.id,
                 "search_default_active_cheques": 1,
+            }
+        )
+        action["context"] = action_context
+        return action
+
+    def action_open_transfers(self):
+        self.ensure_one()
+        action = self.env["ir.actions.actions"]._for_xml_id(
+            "cheque_managment.action_account_transfer_performed"
+        )
+        action["name"] = "Transferencias - %s" % self.display_name
+        action["domain"] = [("journal_id", "=", self.id)]
+        action_context = dict(self.env.context)
+        action_context.update(
+            {
+                "default_journal_id": self.id,
             }
         )
         action["context"] = action_context

@@ -9,6 +9,7 @@
         "data/account_payment_method_data.xml",
         "views/account_journal_views.xml",
         "views/account_cheque_views.xml",
+        "views/account_transfer_views.xml",
         "views/account_payment_views.xml",
         "views/account_payment_register_views.xml",
     ],

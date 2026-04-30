@@ -19,6 +19,22 @@ class AccountPayment(models.Model):
     cheque_number = fields.Char(string="Numero de cheque", tracking=True, copy=False)
     cheque_issue_date = fields.Date(string="Fecha de emision", tracking=True, copy=False)
     cheque_cash_date = fields.Date(string="Fecha de cobro", tracking=True, copy=False)
+    transfer_record_id = fields.Many2one(
+        "account.transfer.performed",
+        string="Transferencia",
+        copy=False,
+        readonly=True,
+        check_company=True,
+    )
+    transfer_payment = fields.Boolean(
+        string="Pago por transferencia",
+        compute="_compute_transfer_payment",
+    )
+    transfer_number = fields.Char(
+        string="Numero de transferencia",
+        tracking=True,
+        copy=False,
+    )
 
     @api.depends("payment_method_line_id", "payment_type")
     def _compute_cheque_payment(self):
@@ -27,6 +43,16 @@ class AccountPayment(models.Model):
                 payment.payment_type == "outbound"
                 and payment.payment_method_line_id
                 and payment.payment_method_line_id.code == "dns_cheque"
+            )
+
+    @api.depends("payment_method_line_id", "payment_type", "journal_id")
+    def _compute_transfer_payment(self):
+        for payment in self:
+            payment.transfer_payment = bool(
+                payment.payment_type == "outbound"
+                and payment.journal_id.type == "bank"
+                and payment.payment_method_line_id
+                and payment.payment_method_line_id._is_dns_transfer_method_line()
             )
 
     @api.onchange("payment_method_line_id")
@@ -38,12 +64,20 @@ class AccountPayment(models.Model):
                 payment.cheque_number = False
                 payment.cheque_issue_date = False
                 payment.cheque_cash_date = False
+            if not payment.transfer_payment:
+                payment.transfer_number = False
 
     @api.onchange("date")
     def _onchange_date_dns_cheque(self):
         for payment in self:
             if payment.cheque_payment and not payment.cheque_issue_date:
                 payment.cheque_issue_date = payment.date
+
+    @api.onchange("journal_id")
+    def _onchange_journal_id_dns_transfer(self):
+        for payment in self:
+            if not payment.transfer_payment:
+                payment.transfer_number = False
 
     @api.constrains(
         "payment_method_line_id",
@@ -76,6 +110,25 @@ class AccountPayment(models.Model):
             if missing:
                 raise ValidationError(
                     "Complete los datos del cheque: %s." % ", ".join(missing)
+                )
+
+    @api.constrains(
+        "payment_method_line_id",
+        "payment_type",
+        "journal_id",
+        "transfer_number",
+    )
+    def _check_dns_transfer_fields(self):
+        for payment in self:
+            if not payment.transfer_payment:
+                continue
+            if payment.journal_id.type != "bank":
+                raise ValidationError(
+                    "Las transferencias deben registrarse con un diario bancario."
+                )
+            if not payment.transfer_number:
+                raise ValidationError(
+                    "Complete los datos de la transferencia: numero de transferencia."
                 )
 
     def _get_dns_cheque_state_from_payment(self):
@@ -129,10 +182,45 @@ class AccountPayment(models.Model):
                     {"cheque_record_id": cheque.id}
                 )
 
+    def _dns_sync_transfer_record(self):
+        if self.env.context.get("skip_dns_transfer_sync"):
+            return
+        for payment in self:
+            if not payment.transfer_payment:
+                if payment.transfer_record_id and payment.state == "draft":
+                    payment.transfer_record_id.unlink()
+                    payment.with_context(skip_dns_transfer_sync=True).write(
+                        {"transfer_record_id": False}
+                    )
+                continue
+
+            if not (payment.transfer_number and payment.journal_id):
+                continue
+
+            vals = {
+                "transfer_number": payment.transfer_number,
+                "date": payment.date,
+                "partner_id": payment.partner_id.id,
+                "journal_id": payment.journal_id.id,
+                "payment_id": payment.id,
+                "payment_method_line_id": payment.payment_method_line_id.id,
+                "amount": abs(payment.amount_company_currency_signed) or payment.amount,
+                "memo": payment.memo,
+                "state": payment.state,
+            }
+            if payment.transfer_record_id:
+                payment.transfer_record_id.write(vals)
+            else:
+                transfer = self.env["account.transfer.performed"].create(vals)
+                payment.with_context(skip_dns_transfer_sync=True).write(
+                    {"transfer_record_id": transfer.id}
+                )
+
     @api.model_create_multi
     def create(self, vals_list):
         payments = super().create(vals_list)
         payments._dns_sync_cheque_record()
+        payments._dns_sync_transfer_record()
         return payments
 
     def write(self, vals):
@@ -144,27 +232,35 @@ class AccountPayment(models.Model):
             "partner_id",
             "date",
             "state",
+            "amount",
+            "memo",
             "cheque_number",
             "cheque_issue_date",
             "cheque_cash_date",
+            "transfer_number",
+            "transfer_record_id",
         }
         if tracked.intersection(vals):
             self._dns_sync_cheque_record()
+            self._dns_sync_transfer_record()
         return res
 
     def action_post(self):
         res = super().action_post()
         self._dns_sync_cheque_record()
+        self._dns_sync_transfer_record()
         return res
 
     def action_cancel(self):
         res = super().action_cancel()
         self._dns_sync_cheque_record()
+        self._dns_sync_transfer_record()
         return res
 
     def action_draft(self):
         res = super().action_draft()
         self._dns_sync_cheque_record()
+        self._dns_sync_transfer_record()
         return res
 
     @api.depends(
@@ -180,3 +276,6 @@ class AccountPayment(models.Model):
             target_state = payment._get_dns_cheque_state_from_payment()
             if payment.cheque_record_id.state != target_state:
                 payment.cheque_record_id.write({"state": target_state})
+        for payment in self.filtered(lambda p: p.transfer_record_id and p.transfer_payment):
+            if payment.transfer_record_id.state != payment.state:
+                payment.transfer_record_id.write({"state": payment.state})
