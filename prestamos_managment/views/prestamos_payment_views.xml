@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_prestamos_loan_payment_kanban" model="ir.ui.view">
+        <field name="name">prestamos.loan.payment.kanban</field>
+        <field name="model">prestamos.loan.payment</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_mobile">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="next_due_date"/>
+                <field name="payment_residual_amount"/>
+                <field name="pending_installment_count"/>
+                <field name="state"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="row g-0">
+                            <div class="col-8">
+                                <field class="fw-bolder" name="loan_id"/>
+                                <div class="text-muted">
+                                    <field name="partner_id"/>
+                                </div>
+                            </div>
+                            <div class="col-4 text-end">
+                                <field name="state" widget="badge"
+                                    decoration-warning="state == 'pending'"
+                                    decoration-success="state == 'paid'"/>
+                            </div>
+                            <div class="col-6 mt-2">
+                                <span>Prox.: </span><field name="next_due_date"/>
+                            </div>
+                            <div class="col-6 mt-2 text-end">
+                                <field name="payment_residual_amount"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_prestamos_loan_payment_list" model="ir.ui.view">
+        <field name="name">prestamos.loan.payment.list</field>
+        <field name="model">prestamos.loan.payment</field>
+        <field name="arch" type="xml">
+            <list string="Pago de Prestamos" default_order="next_due_date asc, id desc">
+                <field name="loan_id"/>
+                <field name="partner_id"/>
+                <field name="payment_journal_id"/>
+                <field name="next_due_date"/>
+                <field name="pending_installment_count"/>
+                <field name="capital_pending_amount" sum="Capital pendiente"/>
+                <field name="interest_pending_amount" sum="Intereses pendientes"/>
+                <field name="payment_residual_amount" sum="Total pendiente"/>
+                <field name="state" widget="badge"
+                    decoration-warning="state == 'pending'"
+                    decoration-success="state == 'paid'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_prestamos_loan_payment_search" model="ir.ui.view">
+        <field name="name">prestamos.loan.payment.search</field>
+        <field name="model">prestamos.loan.payment</field>
+        <field name="arch" type="xml">
+            <search string="Buscar pagos de prestamos">
+                <field name="loan_id"/>
+                <field name="partner_id"/>
+                <field name="next_due_date"/>
+                <filter name="pending" string="Pendientes" domain="[('state', '=', 'pending')]"/>
+                <filter name="paid" string="Pagados" domain="[('state', '=', 'paid')]"/>
+                <separator/>
+                <filter name="group_by_partner" string="Entidad" context="{'group_by': 'partner_id'}"/>
+                <filter name="group_by_journal" string="Banco" context="{'group_by': 'payment_journal_id'}"/>
+                <filter name="group_by_state" string="Estado" context="{'group_by': 'state'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_prestamos_loan_payment_form" model="ir.ui.view">
+        <field name="name">prestamos.loan.payment.form</field>
+        <field name="model">prestamos.loan.payment</field>
+        <field name="arch" type="xml">
+            <form string="Pago de Prestamos">
+                <header>
+                    <button name="action_pay_next_due" type="object" string="Pagar proxima cuota" class="btn-primary" invisible="state == 'paid'"/>
+                    <button name="action_open_loan" type="object" string="Ver prestamo"/>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,paid"/>
+                </header>
+                <sheet>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="company_id" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="loan_id"/>
+                        <h1>
+                            <field name="loan_id" readonly="id"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="payment_journal_id" required="1"/>
+                            <field name="payment_date"/>
+                        </group>
+                        <group>
+                            <field name="next_due_date"/>
+                            <field name="pending_installment_count"/>
+                            <field name="paid_installment_count"/>
+                            <field name="payment_residual_amount"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Cuotas a pagar" name="installments">
+                            <field name="line_ids">
+                                <list create="false" delete="false"
+                                    decoration-success="state == 'paid'"
+                                    decoration-warning="state == 'pending'">
+                                    <button name="action_pay_installment" type="object" string="Pagar" class="btn-primary" invisible="state == 'paid'"/>
+                                    <button name="action_open_account_payment" type="object" string="Pago" invisible="not account_payment_id"/>
+                                    <button name="action_open_payment_move" type="object" string="Asiento" invisible="not payment_move_id"/>
+                                    <field name="sequence" readonly="1"/>
+                                    <field name="due_date" readonly="1"/>
+                                    <field name="capital_amount" readonly="1" sum="Capital"/>
+                                    <field name="capital_residual_amount" readonly="1" sum="Capital pendiente"/>
+                                    <field name="interest_base_amount" readonly="1" sum="Intereses"/>
+                                    <field name="interest_extra_amount" readonly="1" sum="IVA y otros"/>
+                                    <field name="interest_payment_amount" readonly="1" sum="Interes pago"/>
+                                    <field name="payment_total_amount" readonly="1" sum="Total a pagar"/>
+                                    <field name="interest_residual_amount" readonly="1" sum="Interes pendiente"/>
+                                    <field name="payment_residual_amount" readonly="1" sum="Total pendiente"/>
+                                    <field name="payment_date" readonly="1"/>
+                                    <field name="payment_journal_id" readonly="1"/>
+                                    <field name="account_payment_id" readonly="1" optional="hide"/>
+                                    <field name="payment_move_id" readonly="1" optional="hide"/>
+                                    <field name="state" widget="badge"
+                                        decoration-warning="state == 'pending'"
+                                        decoration-success="state == 'paid'"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_prestamos_loan_payment" model="ir.actions.act_window">
+        <field name="name">Pago de Prestamos</field>
+        <field name="res_model">prestamos.loan.payment</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_prestamos_loan_payment_search"/>
+        <field name="context">{'search_default_pending': 1}</field>
+    </record>
+
+    <menuitem
+        id="menu_prestamos_loan_payment"
+        name="Pago de Prestamos"
+        parent="menu_prestamos_root"
+        action="action_prestamos_loan_payment"
+        groups="account.group_account_readonly"
+        sequence="20"
+    />
+</odoo>

@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_prestamos_loan_user,prestamos.loan user,model_prestamos_loan,account.group_account_user,1,1,1,1
+access_prestamos_loan_readonly,prestamos.loan readonly,model_prestamos_loan,account.group_account_readonly,1,0,0,0
+access_prestamos_loan_line_user,prestamos.loan.line user,model_prestamos_loan_line,account.group_account_user,1,1,1,1
+access_prestamos_loan_line_readonly,prestamos.loan.line readonly,model_prestamos_loan_line,account.group_account_readonly,1,0,0,0
+access_prestamos_loan_analytic_line_user,prestamos.loan.analytic.line user,model_prestamos_loan_analytic_line,account.group_account_user,1,1,1,1
+access_prestamos_loan_analytic_line_readonly,prestamos.loan.analytic.line readonly,model_prestamos_loan_analytic_line,account.group_account_readonly,1,0,0,0
+access_prestamos_loan_payment_user,prestamos.loan.payment user,model_prestamos_loan_payment,account.group_account_user,1,1,1,1
+access_prestamos_loan_payment_readonly,prestamos.loan.payment readonly,model_prestamos_loan_payment,account.group_account_readonly,1,0,0,0
+access_prestamos_payment_register_user,prestamos.payment.register user,model_prestamos_payment_register,account.group_account_user,1,1,1,1
+access_prestamos_payment_register_readonly,prestamos.payment.register readonly,model_prestamos_payment_register,account.group_account_readonly,1,1,1,0

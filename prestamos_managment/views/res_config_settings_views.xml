@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_prestamos" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.prestamos</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='account']" position="inside">
+                <block title="Prestamos" name="prestamos_settings_block">
+                    <setting id="loan_bank_short_term_account" string="Cuenta de corto plazo bancario" company_dependent="1">
+                        <field name="loan_bank_short_term_account_id"/>
+                    </setting>
+                    <setting id="loan_bank_long_term_account" string="Cuenta de largo plazo bancario" company_dependent="1">
+                        <field name="loan_bank_long_term_account_id"/>
+                    </setting>
+                    <setting id="loan_owner_short_term_account" string="Cuenta de corto plazo dueno/socio" company_dependent="1">
+                        <field name="loan_owner_short_term_account_id"/>
+                    </setting>
+                    <setting id="loan_owner_long_term_account" string="Cuenta de largo plazo dueno/socio" company_dependent="1">
+                        <field name="loan_owner_long_term_account_id"/>
+                    </setting>
+                    <setting id="loan_non_bank_short_term_account" string="Cuenta de corto plazo no bancario" company_dependent="1">
+                        <field name="loan_non_bank_short_term_account_id"/>
+                    </setting>
+                    <setting id="loan_non_bank_long_term_account" string="Cuenta de largo plazo no bancario" company_dependent="1">
+                        <field name="loan_non_bank_long_term_account_id"/>
+                    </setting>
+                </block>
+                <block title="Intereses de prestamos" name="prestamos_interest_settings_block">
+                    <setting id="loan_short_interest_payable_account" string="Cuenta de intereses a pagar a corto plazo" company_dependent="1">
+                        <field name="loan_short_interest_payable_account_id"/>
+                    </setting>
+                    <setting id="loan_long_interest_payable_account" string="Cuenta de intereses a pagar a largo plazo" company_dependent="1">
+                        <field name="loan_long_interest_payable_account_id"/>
+                    </setting>
+                    <setting id="loan_interest_product" string="Producto de intereses" company_dependent="1">
+                        <field name="loan_interest_product_id"/>
+                    </setting>
+                    <setting id="loan_bank_interest_expense_account" string="Cuenta de gastos de intereses bancarios/financieros" company_dependent="1">
+                        <field name="loan_bank_interest_expense_account_id"/>
+                    </setting>
+                    <setting id="loan_non_bank_interest_expense_account" string="Cuenta de gastos de intereses no bancarios" company_dependent="1">
+                        <field name="loan_non_bank_interest_expense_account_id"/>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

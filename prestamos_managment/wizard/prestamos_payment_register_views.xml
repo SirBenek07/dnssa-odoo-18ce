@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_prestamos_payment_register_form" model="ir.ui.view">
+        <field name="name">prestamos.payment.register.form</field>
+        <field name="model">prestamos.payment.register</field>
+        <field name="arch" type="xml">
+            <form string="Pagar">
+                <field name="payment_board_id" invisible="1"/>
+                <field name="schedule_line_id" invisible="1"/>
+                <field name="loan_id" invisible="1"/>
+                <field name="partner_id" invisible="1"/>
+                <field name="company_id" invisible="1"/>
+                <field name="currency_id" invisible="1"/>
+                <field name="available_journal_ids" invisible="1"/>
+                <field name="available_payment_method_line_ids" invisible="1"/>
+                <field name="available_partner_bank_ids" invisible="1"/>
+                <field name="payment_method_code" invisible="1"/>
+                <field name="transfer_payment" invisible="1"/>
+                <field name="show_partner_bank_account" invisible="1"/>
+                <field name="require_partner_bank_account" invisible="1"/>
+                <group>
+                    <group name="group1">
+                        <field name="journal_id" options="{'no_open': True, 'no_create': True}"/>
+                        <field name="payment_method_line_id" options="{'no_open': True, 'no_create': True}"/>
+                        <field
+                            name="transfer_number"
+                            invisible="not transfer_payment"
+                            required="transfer_payment"
+                        />
+                        <field
+                            name="partner_bank_id"
+                            invisible="not show_partner_bank_account"
+                            required="require_partner_bank_account"
+                            placeholder="Numero de cuenta"
+                            context="{'display_account_trust': True, 'default_partner_id': partner_id}"
+                        />
+                    </group>
+                    <group name="group2">
+                        <label for="amount"/>
+                        <div name="amount_div" class="o_row">
+                            <field name="amount" readonly="1"/>
+                            <field
+                                name="currency_id"
+                                options="{'no_create': True, 'no_open': True}"
+                                groups="base.group_multi_currency"
+                            />
+                        </div>
+                        <field name="payment_date"/>
+                        <field name="communication"/>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_create_payment" type="object" string="Crear pago" class="oe_highlight" data-hotkey="q"/>
+                    <button string="Descartar" class="btn btn-secondary" special="cancel" data-hotkey="x"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

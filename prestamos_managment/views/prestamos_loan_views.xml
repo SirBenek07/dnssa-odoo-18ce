@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_prestamos_loan_list" model="ir.ui.view">
+        <field name="name">prestamos.loan.list</field>
+        <field name="model">prestamos.loan</field>
+        <field name="arch" type="xml">
+            <list
+                string="Prestamos"
+                default_order="loan_date desc, id desc"
+                decoration-info="state == 'draft'"
+                decoration-success="state == 'paid'"
+                decoration-muted="state == 'cancelled'"
+            >
+                <field name="name"/>
+                <field name="loan_date"/>
+                <field name="first_due_date"/>
+                <field name="partner_id"/>
+                <field name="capital_amount" sum="Capital"/>
+                <field name="interest_rate" optional="hide"/>
+                <field name="interest_amount" sum="Intereses"/>
+                <field name="balance_amount" sum="Balance"/>
+                <field name="installment_count"/>
+                <field name="installment_frequency"/>
+                <field name="amortization_system"/>
+                <field name="state" widget="badge"
+                    decoration-info="state == 'draft'"
+                    decoration-primary="state == 'confirmed'"
+                    decoration-success="state == 'paid'"
+                    decoration-muted="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_prestamos_loan_search" model="ir.ui.view">
+        <field name="name">prestamos.loan.search</field>
+        <field name="model">prestamos.loan</field>
+        <field name="arch" type="xml">
+            <search string="Buscar prestamos">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="loan_date"/>
+                <field name="first_due_date"/>
+                <filter name="active_loans" string="Activos" domain="[('state', '=', 'confirmed')]"/>
+                <separator/>
+                <filter name="filter_draft" string="Borrador" domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_confirmed" string="Confirmado" domain="[('state', '=', 'confirmed')]"/>
+                <filter name="filter_paid" string="Pagado" domain="[('state', '=', 'paid')]"/>
+                <filter name="filter_cancelled" string="Cancelado" domain="[('state', '=', 'cancelled')]"/>
+                <separator/>
+                <filter name="group_by_partner" string="Entidad" context="{'group_by': 'partner_id'}"/>
+                <filter name="group_by_system" string="Sistema" context="{'group_by': 'amortization_system'}"/>
+                <filter name="group_by_state" string="Estado" context="{'group_by': 'state'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_prestamos_loan_form" model="ir.ui.view">
+        <field name="name">prestamos.loan.form</field>
+        <field name="model">prestamos.loan</field>
+        <field name="arch" type="xml">
+            <form string="Prestamo">
+                <header>
+                    <button name="action_confirm" type="object" string="Confirmar" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_recompute_schedule" type="object" string="Recalcular plan" invisible="state != 'draft'"/>
+                    <button name="action_cancel" type="object" string="Cancelar" invisible="state != 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,paid"/>
+                </header>
+                <sheet>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="company_id" invisible="1"/>
+                    <field name="capital_move_id" invisible="1"/>
+                    <field name="interest_move_id" invisible="1"/>
+                    <field name="interest_invoice_id" invisible="1"/>
+                    <field name="payment_id" invisible="1"/>
+                    <div name="button_box" class="oe_button_box">
+                        <button name="action_open_capital_move" type="object" class="oe_stat_button" icon="fa-book" invisible="not capital_move_id">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Asiento capital</span>
+                            </div>
+                        </button>
+                        <button name="action_open_interest_move" type="object" class="oe_stat_button" icon="fa-file-text-o" invisible="not interest_move_id and not interest_invoice_id">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Intereses</span>
+                            </div>
+                        </button>
+                        <button name="action_open_other_interest_invoices" type="object" class="oe_stat_button" icon="fa-files-o">
+                            <field name="other_interest_amount" widget="statinfo" string="Otros intereses"/>
+                        </button>
+                        <button name="action_open_payment" type="object" class="oe_stat_button" icon="fa-credit-card" invisible="state == 'draft'">
+                            <field name="balance_amount" widget="statinfo" string="Pendiente"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" readonly="state != 'draft'"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="partner_is_bank_or_financial_entity" invisible="1"/>
+                            <field name="capital_amount" readonly="state != 'draft'"/>
+                            <field name="interest_rate" readonly="state != 'draft'" invisible="amortization_system != 'aleman'"/>
+                            <field name="interest_amount" readonly="state != 'draft' or amortization_system == 'aleman'"/>
+                            <field name="interest_taxes_included" readonly="state != 'draft'"/>
+                            <field name="generate_interest_invoice" readonly="state != 'draft'"/>
+                            <field name="interest_invoice_id" readonly="1" invisible="not interest_invoice_id"/>
+                        </group>
+                        <group>
+                            <field name="loan_date" readonly="state != 'draft'"/>
+                            <field name="first_due_date" readonly="state != 'draft'"/>
+                            <field name="due_policy" readonly="state != 'draft'"/>
+                            <field name="installment_count" readonly="state != 'draft'"/>
+                            <field name="installment_frequency" readonly="state != 'draft'"/>
+                            <field name="amortization_system" readonly="state != 'draft'"/>
+                            <field name="balance_amount" readonly="1" invisible="state == 'draft'"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="system_description" readonly="1" nolabel="1"/>
+                    </group>
+                    <notebook>
+                        <page string="Plan de Amortizacion" name="amortization_plan">
+                            <field name="schedule_line_ids">
+                                <list editable="bottom" create="false" delete="false"
+                                    decoration-success="state == 'paid'"
+                                    decoration-warning="state == 'pending'">
+                                    <field name="sequence" readonly="1"/>
+                                    <field name="due_date" readonly="1"/>
+                                    <field name="capital_amount" readonly="1" sum="Capital"/>
+                                    <field name="interest_base_amount" readonly="1" sum="Intereses"/>
+                                    <field name="interest_extra_amount" readonly="1" sum="IVA y otros"/>
+                                    <field name="payment_total_amount" readonly="1" sum="Total a pagar"/>
+                                    <field name="total_amount" readonly="1" optional="hide" sum="Total sin IVA"/>
+                                    <field name="capital_residual_amount" readonly="1" sum="Capital pendiente"/>
+                                    <field name="interest_residual_amount" readonly="1" sum="Interes pendiente"/>
+                                    <field name="payment_residual_amount" readonly="1" sum="Pago pendiente"/>
+                                    <field name="capital_term" readonly="1"/>
+                                    <field name="interest_term" readonly="1"/>
+                                    <field name="capital_account_id" readonly="1" optional="hide"/>
+                                    <field name="interest_account_id" readonly="1" optional="hide"/>
+                                    <field name="payment_move_id" readonly="1" optional="hide"/>
+                                    <field name="state" widget="badge"
+                                        decoration-warning="state == 'pending'"
+                                        decoration-success="state == 'paid'"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Otros intereses" name="other_interests">
+                            <field
+                                name="other_interest_invoice_ids"
+                                context="{
+                                    'default_move_type': 'in_invoice',
+                                    'default_partner_id': partner_id,
+                                    'default_prestamos_other_interest_loan_id': id,
+                                    'default_invoice_date': loan_date
+                                }"
+                            >
+                                <list string="Otros intereses" create="true" delete="false">
+                                    <field name="name"/>
+                                    <field name="invoice_date"/>
+                                    <field name="partner_id"/>
+                                    <field name="journal_id"/>
+                                    <field name="amount_total" sum="Total"/>
+                                    <field name="payment_state" widget="badge"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Ajustes de Prestamos" name="settings">
+                            <group>
+                                <group string="Prestamo">
+                                    <field name="bank_journal_id" readonly="state != 'draft'"/>
+                                    <field name="journal_id" readonly="state != 'draft'"/>
+                                    <field name="short_loan_account_id" readonly="state != 'draft'"/>
+                                    <field name="long_loan_account_id" readonly="state != 'draft'"/>
+                                </group>
+                                <group string="Intereses">
+                                    <field name="short_interest_account_id" readonly="state != 'draft'"/>
+                                    <field name="long_interest_account_id" readonly="state != 'draft'"/>
+                                    <field name="interest_product_id" readonly="state != 'draft'"/>
+                                    <field name="expense_account_id" readonly="state != 'draft'"/>
+                                    <field name="interest_payment_term_id" readonly="1" invisible="not interest_payment_term_id"/>
+                                </group>
+                            </group>
+                            <group string="Proyecto/s">
+                                <field name="analytic_line_ids" readonly="state != 'draft'">
+                                    <list editable="bottom">
+                                        <field name="account_id"/>
+                                        <field name="percentage"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_prestamos_loan" model="ir.actions.act_window">
+        <field name="name">Prestamos</field>
+        <field name="res_model">prestamos.loan</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_prestamos_loan_search"/>
+        <field name="context">{'search_default_active_loans': 1}</field>
+    </record>
+
+    <menuitem
+        id="menu_prestamos_root"
+        name="Prestamos"
+        parent="account.menu_finance_entries"
+        groups="account.group_account_readonly"
+        sequence="45"
+    />
+
+    <menuitem
+        id="menu_prestamos_loan"
+        name="Prestamos"
+        parent="menu_prestamos_root"
+        action="action_prestamos_loan"
+        groups="account.group_account_readonly"
+        sequence="10"
+    />
+</odoo>
